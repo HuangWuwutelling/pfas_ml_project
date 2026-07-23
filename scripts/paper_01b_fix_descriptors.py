@@ -2,19 +2,19 @@
 """
 paper_01b_fix_descriptors.py
 ============================
-修复 SI xlsx 中失败的 2 种 PFAS 的 SMILES 字段：
-  - 8:2 FtSaB  (SMILES = "N.A."  → 用 PubChem CID 163360452 的 SMILES)
-  - 6:2 FtSaAm  (SMILES 括号不匹配 → 加 1 个右括号)
+修复 SI xlsx 中failed的 2  PFAS 的 SMILES field：
+  - 8:2 FtSaB  (SMILES = "N.A."  → use PubChem CID 163360452 的 SMILES)
+  - 6:2 FtSaAm  (SMILES parenthesis mismatch → 加 1 right parens)
 
-来源：
+source：
   - PubChem CID 163360452 (8:2 FtSaB)
   - PubChem CID 138394385 (6:2 FtSaAm)
 
-输入: data/paper/PFAS_Properties.csv   (含 51 种 PFAS 原始 SMILES)
-      data/paper/descriptors_51pfas.csv (paper_01 输出, 49 行成功, 缺 2 行)
-输出: data/paper/descriptors_51pfas.csv (追加/替换 2 个失败 PFAS → 51 行)
+input: data/paper/PFAS_Properties.csv   (含 51  PFAS original SMILES)
+      data/paper/descriptors_51pfas.csv (paper_01 output, 49 rows succeeded, 缺 2 row)
+output: data/paper/descriptors_51pfas.csv (追加/replace 2 failures PFAS → 51 row)
 
-如果 paper_01 已经修过 SMILES 但本脚本也修, 是 no-op (脚本检查行数即可)
+if paper_01 already fixed SMILES but this script also fixes, is no-op (just check row count)
 """
 
 import csv
@@ -24,7 +24,7 @@ SI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", 
 INPUT_FILE = os.path.join(SI_DIR, "descriptors_51pfas.csv")
 PROPS_FILE = os.path.join(SI_DIR, "PFAS_Properties.csv")
 
-# PubChem 验证过的正确 SMILES (2026-07-03)
+# PubChem verified correct SMILES (2026-07-03)
 SMILES_FIX = {
     "8:2 FtSaB":  "C(C[NH2+]CC(=O)[O-])CNS(=O)(=O)CCC(C(C(C(C(C(C(C(F)(F)F)(F)F)(F)F)(F)F)(F)F)(F)F)(F)F)(F)F",
     "6:2 FtSaAm": "C[NH+](C)CCCNS(=O)(=O)CCC(C(C(C(C(C(F)(F)F)(F)F)(F)F)(F)F)(F)F)(F)F",
@@ -75,7 +75,7 @@ def calc_pfas_specific_features(mol):
 
 
 def main():
-    # 1. 读取已有描述符
+    # 1. read existing descriptors
     with open(INPUT_FILE, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         existing = list(reader)
@@ -83,60 +83,60 @@ def main():
 
     existing_names = {r["PFAS_name"].strip() for r in existing}
 
-    # 2. 读取 PFAS properties (用于 subfamily 等元数据)
+    # 2. read PFAS properties (for subfamily 等元data)
     with open(PROPS_FILE, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         props = {r["PFAS abbreviation"].strip(): r for r in reader}
 
-    # 3. 找需要修复的 2 个 PFAS
+    # 3. find what needs fixing 2 个 PFAS
     new_rows = []
     for pfas_name, correct_smiles in SMILES_FIX.items():
         if pfas_name in existing_names:
-            print(f"  {pfas_name}: 已在 descriptors_51pfas.csv 中, 跳过")
+            print(f"  {pfas_name}:  descriptors_51pfas.csv , skip")
             continue
         if pfas_name not in props:
-            print(f"  {pfas_name}: 在 PFAS_Properties.csv 中找不到, 跳过")
+            print(f"  {pfas_name}:  PFAS_Properties.csv not found in, skip")
             continue
 
-        print(f"  修复 {pfas_name}...")
-        print(f"    旧 SMILES: {props[pfas_name].get('Smiles', '?')}")
-        print(f"    新 SMILES: {correct_smiles}")
+        print(f"   {pfas_name}...")
+        print(f"    old SMILES: {props[pfas_name].get('Smiles', '?')}")
+        print(f"    new SMILES: {correct_smiles}")
 
         mol = Chem.MolFromSmiles(correct_smiles)
         if mol is None:
-            print(f"    ❌ RDKit 仍无法解析, 跳过")
+            print(f"    ❌ RDKit still cannot parse, skip")
             continue
 
-        # 计算所有 RDKit 描述符
+        # compute all RDKit descriptors
         all_desc = calc_all_descriptors(mol)
-        # 计算 PFAS 特有 features
+        # compute PFAS 特has features
         pfas_feat = calc_pfas_specific_features(mol)
 
-        # 合并: PFAS_name, Original_SMILES, RDKIT_SMILES + desc + pfas_feat
+        # merge: PFAS_name, Original_SMILES, RDKIT_SMILES + desc + pfas_feat
         row = {"PFAS_name": pfas_name}
         row["Original_SMILES"] = props[pfas_name].get("Smiles", "")
         row["RDKIT_SMILES"] = correct_smiles
-        # 提取 subfamily / Empirical formula 等
+        # extract subfamily / Empirical formula 等
         for key in ["subfamily", "Empirical formula", "%F", "CAS number",
                     "C number", "F number", "H number", "N number", "S number",
                     "O number", "Cl number", "P number", "Molecular weight"]:
             if key in props[pfas_name]:
                 row[key] = props[pfas_name][key]
-        # 写入所有 RDKit 描述符
+        # write all RDKit descriptors
         for k, v in all_desc.items():
             row[k] = v
-        # 写入 PFAS 特有 features
+        # write to PFAS 特has features
         for k, v in pfas_feat.items():
             row[k] = v
 
         new_rows.append(row)
-        print(f"    ✅ 修复完成, 1 行 added")
+        print(f"    ✅ fix complete, 1 row added")
 
     if not new_rows:
-        print("\n  没有需要修复的 PFAS (no-op)")
+        print("\n  no fixes needed PFAS (no-op)")
         return
 
-    # 4. 追加到 existing
+    # 4. append to existing
     updated = 0
     appended = 0
     for nr in new_rows:
@@ -151,18 +151,18 @@ def main():
             existing.append(nr)
             appended += 1
 
-    print(f"\n  更新: {updated} 行")
-    print(f"  新增: {appended} 行")
+    print(f"\n  update: {updated} row")
+    print(f"  new: {appended} row")
 
-    # 5. 写回
+    # 5. write back
     with open(INPUT_FILE, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(existing)
 
-    print(f"\n  输出: {INPUT_FILE}")
-    print(f"  总行数: {len(existing)} 行")
-    print("✅ 修复完成！")
+    print(f"\n  output: {INPUT_FILE}")
+    print(f"  total row count: {len(existing)} row")
+    print("✅ fix complete！")
 
 
 if __name__ == "__main__":

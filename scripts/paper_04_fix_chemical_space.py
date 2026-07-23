@@ -1,6 +1,6 @@
 """
-修复化学空间图: 用联合t-SNE降维 (51 + 11K一起降维)。
-PCA是线性降维，不适合这个任务。
+fix chemical space figure: use jointt-SNEreduce (51 + 11Kjoint dimensionality reduction)。
+PCAis linear dimensionality reduction，不适合这个任务。
 """
 
 import numpy as np
@@ -19,7 +19,7 @@ DESC_51_FILE = os.path.join(SI_DIR, "descriptors_51pfas.csv")
 FEATURE_FILE = os.path.join(SI_DIR, "feature_matrix_kd.csv")
 DESC_11K_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "processed", "pfas_descriptors_full.csv")
 
-# 1. 加载51种PFAS
+# 1. loaded51PFAS
 with open(DESC_51_FILE, "r") as f:
     reader = csv.DictReader(f)
     rows_51 = list(reader)
@@ -35,7 +35,7 @@ for i, row in enumerate(rows_51):
         v = row.get(col, "").strip()
         X_51[i, j] = float(v) if v else 0.0
 
-# 2. 加载均log Kd
+# 2. load alllog Kd
 logkd_by_name = {}
 with open(FEATURE_FILE, "r") as f:
     for row in csv.DictReader(f):
@@ -51,26 +51,26 @@ with open(FEATURE_FILE, "r") as f:
         count_by_name[name] = count_by_name.get(name, 0) + 1
 mean_logkd = {n: logkd_by_name[n] / count_by_name[n] for n in logkd_by_name}
 
-# 3. 加载11K
+# 3. loaded11K
 print("Loading 11K...")
 with open(DESC_11K_FILE, "r") as f:
     reader = csv.DictReader(f)
     rows_11k = list(reader)
 
-# 取11K的相同特征
+# take11K的samefeature
 feat_11k = reader.fieldnames
 feat_11k_clean = [c for c in feat_11k if c not in {"DTXSID", "SMILES", "RDKIT_SMILES"}]
 common = [f for f in feat_names if f in feat_11k_clean]
 print(f"Common features: {len(common)}/{n_feat}")
 
-# 采样11K到2000个点（太多t-SNE跑太慢）
+# sample11Kto2000points（太多t-SNEruns too slow）
 import random
 random.seed(42)
 n_11k = len(rows_11k)
 sample_size = min(2000, n_11k)
 rows_11k_sample = random.sample(rows_11k, sample_size)
 
-# 构建11K矩阵（按共同特征）
+# build11K矩阵（by common features）
 X_11k = np.zeros((sample_size, len(common)))
 feat_idx_map = {f: i for i, f in enumerate(common)}
 for i, row in enumerate(rows_11k_sample):
@@ -83,7 +83,7 @@ for i, row in enumerate(rows_11k_sample):
             except:
                 X_11k[i, j] = 0.0
 
-# 重建51种PFAS的共同特征矩阵
+# rebuild51PFAS的共同feature matrix
 X_51_aligned = np.zeros((len(rows_51), len(common)))
 for i, row in enumerate(rows_51):
     for col in common:
@@ -91,13 +91,13 @@ for i, row in enumerate(rows_51):
         v = row.get(col, "").strip()
         X_51_aligned[i, j] = float(v) if v else 0.0
 
-# 5. 联合标准化
+# 5. 联合standardize
 print("Standardizing...")
 X_all = np.vstack([X_11k, X_51_aligned])
 scaler = StandardScaler()
 X_all_scaled = scaler.fit_transform(X_all)
 
-# 6. 先用PCA降到50维加速
+# 6. first usePCAreduce to50维加速
 print("PCA pre-reduction...")
 pca = PCA(n_components=50, random_state=42)
 X_all_pca = pca.fit_transform(X_all_scaled)
@@ -108,7 +108,7 @@ print("t-SNE on combined (11K+51)...")
 tsne = TSNE(n_components=2, perplexity=30, random_state=42, n_jobs=-1, verbose=True)
 X_all_tsne = tsne.fit_transform(X_all_pca)
 
-# 分割
+# split
 X_11k_tsne = X_all_tsne[:sample_size]
 X_51_tsne = X_all_tsne[sample_size:]
 
@@ -120,7 +120,7 @@ fig, ax = plt.subplots(figsize=(14, 10))
 ax.scatter(X_11k_tsne[:, 0], X_11k_tsne[:, 1], 
            c="lightgray", s=3, alpha=0.3, label=f"PFASMASTER (n={sample_size})")
 
-# 51种PFAS
+# 51PFAS
 logkd_vals = np.array([mean_logkd.get(n, np.nan) for n in names_51])
 valid = ~np.isnan(logkd_vals)
 
@@ -128,7 +128,7 @@ scatter = ax.scatter(X_51_tsne[valid, 0], X_51_tsne[valid, 1],
                      c=logkd_vals[valid], cmap="coolwarm",
                      s=100, alpha=0.9, edgecolors="k", linewidth=0.8)
 
-# 标注PFAS名称
+# 标注PFASname
 for i, (name, v) in enumerate(zip(names_51, valid)):
     if v:
         ax.annotate(name, (X_51_tsne[i, 0], X_51_tsne[i, 1]),
@@ -141,14 +141,14 @@ ax.set_title("Chemical space: 11K PFASMASTER + 51 PFAS with known Kd (joint t-SN
 ax.set_xlabel("t-SNE 1")
 ax.set_ylabel("t-SNE 2")
 
-# 也保存一格不带标注的版本做对比
+# also save an unlabeled version for comparison
 plt.tight_layout()
 out = os.path.join(SI_DIR, "kd_chemical_space_11k_fixed.png")
 plt.savefig(out, dpi=200, bbox_inches="tight")
 plt.close()
 print(f"✅ Saved: {out}")
 
-# 同时保存高清标注版
+# also save high-res annotated version
 fig, ax = plt.subplots(figsize=(14, 10))
 ax.scatter(X_11k_tsne[:, 0], X_11k_tsne[:, 1], 
            c="lightgray", s=2, alpha=0.25)

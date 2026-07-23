@@ -2,27 +2,27 @@
 """
 S1.5_clean_epa_list.py
 |==============================
-|[论文核心] 清洗EPA PFASMASTER清单，作为11K描述符pipeline的输入（§2.2 / §3.4）
+|[论文core] 清洗EPA PFASMASTERlist，作为11Kdescriptorspipeline的input（§2.2 / §3.4）
 |
-|输入: data/raw/pfas_master_list.csv   (EPA PFASMASTER, 22,987条原始记录)
-|输出: data/processed/pfas_clean.csv   (清洗后约10,972条含SMILES的记录)
+|input: data/raw/pfas_master_list.csv   (EPA PFASMASTER, 22,987original records)
+|output: data/processed/pfas_clean.csv   (after cleaning ~10,972rows containingSMILES的record)
 |
-|关键过滤:
-|  1. 必须有SMILES（非空且非 N/A）
-|  2. SMILES长度合理 (5 < len < 500)
-|  3. 去重（同一SMILES只保留第一条）
-|  4. 只保留有机分子（含 C 或 c 原子）
+|key filters:
+|  1. must haveSMILES（non-empty and not N/A）
+|  2. SMILESlength reasonable (5 < len < 500)
+|  3. deduplicate（同一SMILESkeep only first）
+|  4. keep only organic molecules（含 C 或 c atom）
 |
-|运行:
+|运row:
 |  cd <project_root>
-|  python scripts/prepare_02_clean_epa.py
+|  python scripts/EPA cleaner.py
 |
-|说明:
-|  prepare_03_descriptors_11k.py 依赖此脚本的输出。
-|  如果你只想跑 core pipeline（paper_03 → paper_09），不需要这个脚本。
+|description:
+|  prepare_03_descriptors_11k.py depends on this script's output。
+|  if你only想跑 core pipeline（paper_03 → paper_09），不need这个脚this。
 |
-|原脚本: scripts/_archive/prepare_02_clean_epa.py（恢复于 2026-07-23，
-|         修缮 docstring；脚本逻辑无改动）
+|original script: scripts/_archive/EPA cleaner.py（restored on 2026-07-23，
+|         revise docstring；script logic unchanged）
 """
 import csv
 import os
@@ -33,7 +33,7 @@ INPUT_FILE = os.path.join(DATA_DIR, "raw", "pfas_master_list.csv")
 OUTPUT_FILE = os.path.join(DATA_DIR, "processed", "pfas_clean.csv")
 
 print("=" * 60)
-print("  EPA PFASMASTER 清单清洗")
+print("  EPA PFASMASTER list cleaning")
 print("=" * 60)
 
 smiles_seen = set()
@@ -54,12 +54,12 @@ with open(INPUT_FILE, "r", encoding="utf-8-sig") as f:
         smiles = (row.get("SMILES") or "").strip()
         name = (row.get("PREFERRED NAME") or "").strip()
 
-        # 必须有SMILES
+        # must haveSMILES
         if not smiles or smiles == "N/A":
             skipped_no_smiles += 1
             continue
 
-        # 长度过滤
+        # length filter
         if len(smiles) < 5:
             skipped_short += 1
             continue
@@ -67,18 +67,18 @@ with open(INPUT_FILE, "r", encoding="utf-8-sig") as f:
             skipped_long += 1
             continue
 
-        # 去重
+        # deduplicate
         if smiles in smiles_seen:
             skipped_duplicate += 1
             continue
         smiles_seen.add(smiles)
 
-        # 基本有机性检查（含C）
+        # basic organic check（含C）
         if "C" not in smiles and "c" not in smiles:
             skipped_not_organic += 1
             continue
 
-        # 提取DTXSID（第一列是URL）
+        # extractDTXSID（第一columnisURL）
         dtxsid_raw = row.get("DTXSID", "")
         if "/" in dtxsid_raw:
             dtxsid = dtxsid_raw.split("/")[-1]
@@ -95,17 +95,17 @@ with open(INPUT_FILE, "r", encoding="utf-8-sig") as f:
             "AVERAGE_MASS": row.get("AVERAGE MASS", ""),
         })
 
-# 输出统计
-print(f"\n=== 清洗统计 ===")
-print(f"  原始记录数: {total:,}")
-print(f"  无SMILES跳过: {skipped_no_smiles:,}")
-print(f"  SMILES太短跳过: {skipped_short:,}")
-print(f"  SMILES太长跳过: {skipped_long:,}")
-print(f"  重复SMILES跳过: {skipped_duplicate:,}")
-print(f"  非有机跳过: {skipped_not_organic:,}")
-print(f"  ✅ 有效净记录: {len(clean_rows):,}")
+# outputstatistics
+print(f"\n=== cleaning statistics ===")
+print(f"  original record count: {total:,}")
+print(f"  noSMILESskip: {skipped_no_smiles:,}")
+print(f"  SMILEStoo short, skipped: {skipped_short:,}")
+print(f"  SMILEStoo long, skipped: {skipped_long:,}")
+print(f"  duplicateSMILESskip: {skipped_duplicate:,}")
+print(f"  non-organic skipped: {skipped_not_organic:,}")
+print(f"  ✅ valid records: {len(clean_rows):,}")
 
-# 输出
+# output
 os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
 with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=[
@@ -115,10 +115,10 @@ with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as f:
     writer.writeheader()
     writer.writerows(clean_rows)
 
-print(f"\n  ✅ 清洗后清单已保存: {OUTPUT_FILE}")
-print(f"     {len(clean_rows):,} 种化合物")
+print(f"\n  ✅ cleaned list saved: {OUTPUT_FILE}")
+print(f"     {len(clean_rows):,} compounds")
 
-# 简单长度分布
+# simple长度distribution
 lengths = [len(r["SMILES"]) for r in clean_rows]
-print(f"\n  SMILES长度: min={min(lengths)}, max={max(lengths)}, "
+print(f"\n  SMILES: min={min(lengths)}, max={max(lengths)}, "
       f"mean={sum(lengths)/len(lengths):.0f}")

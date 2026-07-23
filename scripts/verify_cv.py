@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""快速验证CV_R²和简化模型R²"""
+"""Quick verification of CV R² and simplified model R²."""
 import csv, os, numpy as np, warnings
 warnings.filterwarnings("ignore")
 
@@ -40,32 +40,32 @@ import xgboost as xgb
 fieldnames = list(rows[0].keys())
 all_desc = [c for c in fieldnames if c not in NON_FEATURE]
 
-# 1. 全模型 = 全部特征（S5/non_feature 排除 "PFAS_name", "log_Kd", "Kd_L_kg", "log_Koc"）
+# 1. Full model = all features (S5/non_feature excluding "PFAS_name", "log_Kd", "Kd_L_kg", "log_Koc")
 non_feat_s5 = {"PFAS_name","log_Kd","Kd_L_kg","log_Koc"}
 all_desc_s5 = [c for c in fieldnames if c not in non_feat_s5]
 X_all, y_all = extract(rows, all_desc_s5)
-print(f"全模型 (S5方式): X={X_all.shape}, 排除列={non_feat_s5}")
+print(f"Full model (S5 mode): X={X_all.shape}, excluded columns={non_feat_s5}")
 model = xgb.XGBRegressor(n_estimators=500, max_depth=8, learning_rate=0.05,
                           subsample=0.8, colsample_bytree=0.8, random_state=42, n_jobs=-1)
 cv = cross_val_score(model, X_all, y_all, cv=5, scoring='r2')
-print(f"  CV_R² = {cv.mean():.4f} ± {cv.std():.4f}")
+print(f"  CV R² = {cv.mean():.4f} +/- {cv.std():.4f}")
 
-# 2. 全模型 (S6b方式, 多排除 _n_soil_missing)
+# 2. Full model (S6b mode, excluding additionally _n_soil_missing)
 X_all2, y_all2 = extract(rows, all_desc)
-print(f"\n全模型 (S6b方式): X={X_all2.shape}, 排除列={NON_FEATURE}")
+print(f"\nFull model (S6b mode): X={X_all2.shape}, excluded columns={NON_FEATURE}")
 model2 = xgb.XGBRegressor(n_estimators=500, max_depth=8, learning_rate=0.05,
                            subsample=0.8, colsample_bytree=0.8, random_state=42, n_jobs=-1)
 cv2 = cross_val_score(model2, X_all2, y_all2, cv=5, scoring='r2')
-print(f"  CV_R² = {cv2.mean():.4f} ± {cv2.std():.4f}")
+print(f"  CV R² = {cv2.mean():.4f} +/- {cv2.std():.4f}")
 
-# 3. 简化模型 (MolWt + Corg + pH + CEC)
+# 3. Simplified model (MolWt + Corg + pH + CEC)
 simple_cols = ["MolWt", "Corg_%", "pH", "CEC"]
 X_s, y_s = extract(rows, simple_cols)
-print(f"\n简化模型 (MolWt+Corg+pH+CEC): X={X_s.shape}")
+print(f"\nSimplified model (MolWt+Corg+pH+CEC): X={X_s.shape}")
 model_s = xgb.XGBRegressor(n_estimators=500, max_depth=4, learning_rate=0.05,
                             random_state=42, n_jobs=-1)
 cv_s = cross_val_score(model_s, X_s, y_s, cv=5, scoring='r2')
-print(f"  CV_R² = {cv_s.mean():.4f} ± {cv_s.std():.4f}")
+print(f"  CV R² = {cv_s.mean():.4f} +/- {cv_s.std():.4f}")
 
 # Test set R²
 from sklearn.model_selection import train_test_split

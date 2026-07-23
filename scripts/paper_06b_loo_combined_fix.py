@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 S6b_loo_combined_fix.py
-重新跑Combined模型留一验证，生成详细CSV
-同时确认简化模型 (MolWt + Corg + pH + CEC) 的R²
+re-runCombinedmodel LOO validation，生成detailCSV
+also confirm simplified model (MolWt + Corg + pH + CEC) 的R²
 """
 import csv, os, sys, numpy as np, warnings
 warnings.filterwarnings("ignore")
@@ -14,7 +14,7 @@ OUT_COMBINED = os.path.join(SI_DIR, "kd_leave_one_out_results_combined.csv")
 NON_FEATURE = {"PFAS_name","log_Kd","Kd_L_kg","log_Koc"}
 SOIL_FEATURES = {"Corg_%","foc","pH","Sand","Silt","Clay","CEC","Fe_g_kg","Al_g_kg"}
 
-# ── 加载 ──
+# ── loaded ──
 from collections import defaultdict
 with open(INPUT, encoding="utf-8") as f:
     rows = list(csv.DictReader(f))
@@ -23,9 +23,9 @@ pfas_groups = defaultdict(list)
 for row in rows:
     pfas_groups[row["PFAS_name"].strip()].append(row)
 
-print(f"总数据: {len(rows)} 行, PFAS种类: {len(pfas_groups)}")
+print(f"totaldata: {len(rows)} row, PFAStypes: {len(pfas_groups)}")
 
-# ── 提取数据 ──
+# ── extract data ──
 def extract(rows_list, use_soil=True):
     fieldnames = list(rows_list[0].keys())
     all_desc = [c for c in fieldnames if c not in NON_FEATURE]
@@ -65,8 +65,8 @@ combined_y_pred = []
 
 # Also compute simplified model (MolWt + Corg + pH + CEC)
 def extract_simplified(rows_list):
-    """提取简化特征: MolWt, Corg_%, pH, CEC"""
-    # 先找到这些列的索引
+    """extract simplified features: MolWt, Corg_%, pH, CEC"""
+    # first find indices of these columns
     # We need to work from the feature matrix directly
     from collections import OrderedDict
     # Just grab the columns we need
@@ -136,18 +136,18 @@ with open(OUT_COMBINED, "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=all_results[0].keys())
     writer.writeheader()
     writer.writerows(all_results)
-print(f"\n✅ 保存: {OUT_COMBINED}")
+print(f"\n✅ save: {OUT_COMBINED}")
 
-# Combined LOO 汇总
+# Combined LOO summary
 combined_r2 = np.array([r["r2"] for r in all_results])
 combined_n_test = np.array([r["n_test"] for r in all_results])
 overall_r2 = r2_score(combined_y_true, combined_y_pred)
 
-print(f"\n=== Combined LOO 汇总 ===")
-print(f"  总体R² (pooled) = {overall_r2:.4f}")
-print(f"  平均R² = {np.mean(combined_r2):.4f}")
-print(f"  中位数R² = {np.median(combined_r2):.4f}")
-print(f"  正R²: {sum(combined_r2 > 0)}/{len(combined_r2)}")
+print(f"\n=== Combined LOO summary ===")
+print(f"  Overall R² (pooled) = {overall_r2:.4f}")
+print(f"  R² = {np.mean(combined_r2):.4f}")
+print(f"  medianR² = {np.median(combined_r2):.4f}")
+print(f"  R²: {sum(combined_r2 > 0)}/{len(combined_r2)}")
 
 # n≥10 vs n<10
 large = combined_r2[combined_n_test >= 10]
@@ -159,16 +159,16 @@ print(f"  n<10 mean R² = {np.mean(small):.4f} (n={len(small)})")
 good = sum(combined_r2 > 0.5)
 med = sum((combined_r2 > 0) & (combined_r2 <= 0.5))
 poor = sum(combined_r2 <= 0)
-print(f"  分布: 优(>0.5)={good} 中(0~0.5)={med} 差(≤0)={poor}")
+print(f"  distribution: good(>0.5)={good} medium(0~0.5)={med} bad(<=0)={poor}")
 
-# 最差的5个
+# worst5个
 idx = np.argsort(combined_r2)
-print(f"\n  最差5个:")
+print(f"\n  bad5:")
 for j in idx[:5]:
     r = all_results[j]
     print(f"    ⚠️ {r['test_pfas']:<18} R²={r['r2']:.3f} n={r['n_test']}")
 
-# 保存LOO汇总到 kd_leave_one_out_summary.csv（覆盖S6的旧结果）
+# saveLOOaggregate to kd_leave_one_out_summary.csv（覆盖S6的oldresult）
 OUT_SUMMARY = os.path.join(SI_DIR, "kd_leave_one_out_summary.csv")
 n_positive = sum(combined_r2 > 0)
 n_total = len(combined_r2)
@@ -191,11 +191,11 @@ with open(OUT_SUMMARY, "w", newline="", encoding="utf-8") as f:
         "std_r2": round(np.std(combined_r2), 4),
         "positive_r2_ratio": f"{n_positive}/{n_total}",
     })
-print(f"  ✅ LOO汇总已保存: {OUT_SUMMARY}")
+print(f"  ✅ LOOsummary saved: {OUT_SUMMARY}")
 
-# ── 简化模型: 全数据 MolWt + Corg + pH + CEC ──
-# (单次 seed=42 结果，与 SI Table S2 一致)
-print("\n\n=== 简化模型: MolWt + Corg + pH + CEC ===\n")
+# ── Simplified model: all data MolWt + Corg + pH + CEC ──
+# (single seed=42 result，and SI Table S2 consistent)
+print("\n\n=== Simplified model: MolWt + Corg + pH + CEC ===\n")
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import r2_score, mean_squared_error
 
@@ -204,7 +204,7 @@ for name in sorted(pfas_groups.keys()):
     all_rows_list.extend(pfas_groups[name])
 
 X_simple, y_simple = extract_simplified(all_rows_list)
-print(f"  数据: {len(y_simple)} 样本")
+print(f"  data: {len(y_simple)} samples")
 
 X_tr, X_te, y_tr, y_te = train_test_split(X_simple, y_simple, test_size=0.2, random_state=42)
 model_s = xgb.XGBRegressor(n_estimators=500, max_depth=4, learning_rate=0.05,
@@ -217,22 +217,22 @@ rpd_s = np.std(y_te) / rmse_s
 
 cv_s = cross_val_score(model_s, X_simple, y_simple, cv=5, scoring='r2')
 
-print(f"  简化模型 (MolWt+Corg+pH+CEC):")
+print(f"  Simplified model (MolWt+Corg+pH+CEC):")
 print(f"    Test R² = {r2_s:.4f}")
 print(f"    RMSE = {rmse_s:.4f}")
 print(f"    RPD = {rpd_s:.2f}")
 print(f"    5-fold CV: mean={cv_s.mean():.4f} ± {cv_s.std():.4f}")
-print(f"    相对于全模型(0.868)的比例: {r2_s/0.868*100:.1f}%")
+print(f"    fraction of full model (0.868): {r2_s/0.868*100:.1f}%")
 
-# 全模型 (all features) CV 确认
+# full model (all features) CV confirm
 X_all, y_all, _ = extract(all_rows_list, use_soil=True)
 model_full = xgb.XGBRegressor(n_estimators=500, max_depth=8, learning_rate=0.05,
                                subsample=0.8, colsample_bytree=0.8,
                                random_state=42, n_jobs=-1)
 cv_full = cross_val_score(model_full, X_all, y_all, cv=5, scoring='r2')
-print(f"\n  全模型 5-fold CV: mean={cv_full.mean():.4f} ± {cv_full.std():.4f}")
+print(f"\n  full model 5-fold CV: mean={cv_full.mean():.4f} ± {cv_full.std():.4f}")
 
-# 将简化模型结果附加到 kd_simplified_results.csv（辅助记录）
+# append simplified model results to kd_simplified_results.csv（auxiliary record）
 SIMPLIFIED_OUT = os.path.join(SI_DIR, "kd_simplified_results.csv")
 if os.path.exists(SIMPLIFIED_OUT):
     with open(SIMPLIFIED_OUT, "a", newline="", encoding="utf-8") as f:
@@ -246,4 +246,4 @@ if os.path.exists(SIMPLIFIED_OUT):
             round(cv_s.mean(), 4),
             round(cv_s.std(), 4),
         ])
-    print(f"  ✅ 已附加到 {SIMPLIFIED_OUT}")
+    print(f"  ✅ appended to {SIMPLIFIED_OUT}")

@@ -2,19 +2,19 @@
 """
 S2_merge_features.py
 ====================
-融合SI数据：将S1的RDKit描述符 + Final_data的土壤性质 + Kd → 训练特征矩阵。
+融合SIdata：将S1的RDKitdescriptors + Final_data的soil properties + Kd → training feature matrix。
 
-输入:
-  data/paper/descriptors_51pfas.csv   (51种PFAS的RDKit描述符)
-  data/paper/Final_data.csv           (1849行实验数据)
-输出:
-  data/paper/feature_matrix_kd.csv    (1227行 × ~250列: 特征 + 目标变量)
-  data/paper/feature_matrix_kd_info.txt  (数据统计)
+input:
+  data/paper/descriptors_51pfas.csv   (51PFAS的RDKitdescriptors)
+  data/paper/Final_data.csv           (1849experimental data rows)
+output:
+  data/paper/feature_matrix_kd.csv    (1227row × ~250column: feature + target)
+  data/paper/feature_matrix_kd_info.txt  (datastatistics)
 
-说明:
-  匹配方式: PFAS缩写 (PFAS abbreviation列) → PFAS_name
-  仅保留 log Kd 不为空且所有土壤特征完整的行。
-  目标变量: log Kd (SI Excel的列58)
+description:
+  matching method: PFAS缩写 (PFAS abbreviationcolumn) → PFAS_name
+  keep only log Kd rows with non-empty values and complete soil features。
+  target: log Kd (SI Excel的column58)
 """
 
 import csv
@@ -28,8 +28,8 @@ FINAL_FILE = os.path.join(SI_DIR, "Final_data.csv")
 OUTPUT_FILE = os.path.join(SI_DIR, "feature_matrix_kd.csv")
 INFO_FILE = os.path.join(SI_DIR, "feature_matrix_kd_info.txt")
 
-# 土壤/实验特征列（Final_data中选取）
-# 列名映射（从Final_data.csv首行自动获取）
+# soil/experimental feature columns（Final_dataselected from）
+# column name mapping（fromFinal_data.csvauto-fetch from header row）
 SOIL_FEATURE_MAP = {
     "Corg_%": "Corg (%)",
     "foc": "foc",
@@ -42,7 +42,7 @@ SOIL_FEATURE_MAP = {
     "Al_g_kg": "Al ((g/kg))",
 }
 
-# 目标变量列名
+# targetcolumn名
 TARGET_NAME = "log Kd ([-])"
 TARGET_ALT_NAME = "log Koc ([-])"
 KD_NAME = "Kd (L/Kg)"
@@ -50,7 +50,7 @@ PFAS_NAME_MAP = "PFAS (abreviation)"
 
 
 def safe_float(v):
-    """安全转换为float, 处理缺失值标记"""
+    """safely convert tofloat, handle missing value flags"""
     if v is None:
         return None
     s = str(v).strip()
@@ -63,7 +63,7 @@ def safe_float(v):
 
 
 def main():
-    # 1. 加载RDKit描述符, 按PFAS名称索引
+    # 1. loadedRDKitdescriptors, byPFASname index
     with open(DESC_FILE, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         desc_rows = list(reader)
@@ -77,18 +77,18 @@ def main():
                        if k not in ("PFAS_name", "Original_SMILES", "RDKIT_SMILES")]
     
     print("=" * 60)
-    print("  特征融合: RDKit描述符 + 土壤性质 + Kd")
+    print("  feature merging: RDKitdescriptors + soil properties + Kd")
     print("=" * 60)
-    print(f"\n  RDKit描述符: {len(desc_rows)} 种PFAS, {len(desc_fieldnames)} 列")
+    print(f"\n  RDKitdescriptors: {len(desc_rows)} PFAS, {len(desc_fieldnames)} column")
 
-    # 2. 读取Final_data, 用DictReader按列名访问
+    # 2. readFinal_data, useDictReaderbycolumn名访问
     with open(FINAL_FILE, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         final_rows = list(reader)
 
-    print(f"  Final_data: {len(final_rows)} 行")
+    print(f"  Final_data: {len(final_rows)} row")
     
-    # 3. 逐行匹配并融合
+    # 3. match row-by-row and merge
     merged = []
     unmatched_names = set()
     skipped_no_target = 0
@@ -100,48 +100,48 @@ def main():
         if not row:
             continue
 
-        # PFAS名称
+        # PFASname
         pfas_name = row.get(PFAS_NAME_MAP, "").strip()
         if not pfas_name:
             continue
 
-        # 查找描述符
+        # find descriptor
         desc = desc_by_name.get(pfas_name)
         if desc is None:
             unmatched_names.add(pfas_name)
             skipped_no_desc += 1
             continue
 
-        # 目标变量: log Kd
+        # target: log Kd
         log_kd = safe_float(row.get(TARGET_NAME))
         if log_kd is None:
             skipped_no_target += 1
             continue
 
-        # 备选: Kd 和 log Koc
+        # alternative: Kd and log Koc
         kd = safe_float(row.get(KD_NAME))
         log_koc = safe_float(row.get(TARGET_ALT_NAME))
 
-        # 土壤特征（通过列名访问）
+        # soil features（access via column name）
         soil_vals = {}
         for feat_name, col_name in SOIL_FEATURE_MAP.items():
             v = safe_float(row.get(col_name))
             soil_vals[feat_name] = v
         
-        # 统计哪些土壤特征缺失
+        # statistics哪些soil featuresmissing
         n_soil_missing = sum(1 for v in soil_vals.values() if v is None)
         
-        # 构建合并行
+        # construct merged rows
         merged_row = {
             "PFAS_name": pfas_name,
             "log_Kd": log_kd,
             "Kd_L_kg": kd,
             "log_Koc": log_koc,
         }
-        # 加入土壤特征
+        # add soil features
         for feat_name, val in soil_vals.items():
             merged_row[feat_name] = val
-        # 加入RDKit描述符
+        # 加入RDKitdescriptors
         for fn in desc_fieldnames:
             merged_row[fn] = desc[fn]
         
@@ -149,7 +149,7 @@ def main():
         merged.append(merged_row)
         matched += 1
     
-    # 4. 统计
+    # 4. statistics
     info_lines = []
     info_lines.append(f"Total rows in Final_data: {len(final_rows)}")
     info_lines.append(f"")
@@ -164,7 +164,7 @@ def main():
             info_lines.append(f"  - {n}")
     info_lines.append(f"")
     
-    # 土壤特征缺失统计
+    # soil feature missing statistics
     missing_counts = {k: 0 for k in SOIL_FEATURE_MAP}
     n_soil_complete = 0
     for r in merged:
@@ -183,7 +183,7 @@ def main():
     info_lines.append(f"Rows with ALL soil features: {n_soil_complete}/{total}")
     info_lines.append(f"")
     
-    # log Kd 分布
+    # log Kd distribution
     logkd_vals = [r["log_Kd"] for r in merged]
     info_lines.append(f"log Kd distribution:")
     info_lines.append(f"  n={len(logkd_vals)}")
@@ -193,16 +193,16 @@ def main():
     info_lines.append(f"  std={statistics.stdev(logkd_vals):.2f}")
     info_lines.append(f"")
 
-    # 打印统计
+    # 打印statistics
     for line in info_lines:
         print(f"  {line}")
     
-    # 写info文件
+    # 写infofile
     with open(INFO_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(info_lines))
-    print(f"\n  统计信息: {INFO_FILE}")
+    print(f"\n  statisticsinfo: {INFO_FILE}")
 
-    # 5. 输出CSV（去掉_n_soil_missing内部列）
+    # 5. outputCSV（remove_n_soil_missinginternal columns）
     out_fieldnames = [
         "PFAS_name", "log_Kd", "Kd_L_kg", "log_Koc",
     ] + list(SOIL_FEATURE_MAP.keys()) + desc_fieldnames
@@ -212,9 +212,9 @@ def main():
         writer.writeheader()
         writer.writerows(merged)
     
-    print(f"  特征矩阵: {OUTPUT_FILE}")
-    print(f"  {len(merged)} 行 × {len(out_fieldnames)} 列")
-    print(f"\n✅ S2 完成！")
+    print(f"  feature matrix: {OUTPUT_FILE}")
+    print(f"  {len(merged)} row × {len(out_fieldnames)} column")
+    print(f"\n✅ S2 ！")
 
 
 if __name__ == "__main__":

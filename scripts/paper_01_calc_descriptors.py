@@ -2,13 +2,13 @@
 """
 S1_calc_descriptors_51pfas.py
 |==============================
-|[论文核心] 计算51种PFAS的RDKit分子描述符（对应§2.2）
+|[论文core] compute51PFAS的RDKitmolecular descriptors（for应§2.2）
 |
-|输入: data/paper/PFAS_Properties.csv (51种PFAS, 含Smiles列)
-|输出: data/paper/descriptors_51pfas.csv
-|      (51行: PFAS名 + Smiles + RDKIT_SMILES + 225个RDKit描述符 + PFAS特有特征)
+|input: data/paper/PFAS_Properties.csv (51PFAS, 含Smilescolumn)
+|output: data/paper/descriptors_51pfas.csv
+|      (51row: PFAS名 + Smiles + RDKIT_SMILES + 225个RDKitdescriptors + PFASspecific features)
 |
-|运行:
+|运row:
 |  cd <project_root>
 |  .venv_py311/bin/python scripts/paper_01_calc_descriptors.py
 """
@@ -19,26 +19,26 @@ import sys
 import time
 import numpy as np
 
-# 路径配置
+# path config
 SI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "paper")
 INPUT_FILE = os.path.join(SI_DIR, "PFAS_Properties.csv")
 OUTPUT_FILE = os.path.join(SI_DIR, "descriptors_51pfas.csv")
 
-# RDKit导入
+# RDKitimport
 try:
     from rdkit import Chem
     from rdkit.Chem import Descriptors, AllChem
     from rdkit.ML.Descriptors import MoleculeDescriptors
     RDKIT_AVAILABLE = True
-    print("✅ RDKit 已安装")
+    print("✅ RDKit installed")
 except ImportError:
     RDKIT_AVAILABLE = False
-    print("❌ RDKit 未安装")
+    print("❌ RDKit not installed")
     sys.exit(1)
 
 
 def clean_smiles(smiles):
-    """清理SMILES：去掉 |lp:...| 扩展标记等非标准格式"""
+    """清理SMILES：remove |lp:...| extension markers and other non-standard formats"""
     if not smiles or not isinstance(smiles, str):
         return None
     s = smiles.strip()
@@ -49,14 +49,14 @@ def clean_smiles(smiles):
         s = s[:pipe_pos].strip()
     if not s:
         return None
-    # 特殊处理已知问题SMILES
+    # special-case known issuesSMILES
     if s.upper() in ("", "N.A.", "N/A", "NA", "NONE"):
         return None
     return s
 
 
 def calc_all_descriptors(mol):
-    """计算200+个标准RDKit分子描述符"""
+    """compute200+standardRDKitmolecular descriptors"""
     if mol is None:
         return {}
     desc_names = [d[0] for d in Descriptors._descList]
@@ -66,7 +66,7 @@ def calc_all_descriptors(mol):
 
 
 def calc_pfas_specific_features(mol):
-    """计算PFAS特有特征"""
+    """computePFASspecific features"""
     features = {
         "carbon_count": 0,
         "fluorine_count": 0,
@@ -89,10 +89,10 @@ def calc_pfas_specific_features(mol):
     features["fluorine_count"] = f_count
     features["perfluoro_ratio"] = round(f_count / max(total_atoms, 1), 4)
 
-    # 子结构匹配
+    # substructure match
     sulfonate = Chem.MolFromSmarts("[S](=O)(=O)[O]")
     carboxyl = Chem.MolFromSmarts("[CX3](=O)[OX2]")
-    ether = Chem.MolFromSmarts("[CX4][OX2][CX4]")  # 仅饱和醚键 C-O-C，不含酯键
+    ether = Chem.MolFromSmarts("[CX4][OX2][CX4]")  # saturated ether bonds only C-O-C，不含酯键
     if sulfonate and mol.HasSubstructMatch(sulfonate):
         features["has_sulfonate"] = 1
     if carboxyl and mol.HasSubstructMatch(carboxyl):
@@ -114,20 +114,20 @@ def calc_pfas_specific_features(mol):
 
 def main():
     print("=" * 60)
-    print("  51种PFAS的RDKit描述符计算")
+    print("  51PFASRDKitdescriptor computation")
     print("=" * 60)
 
-    # 读取输入
+    # read input
     with open(INPUT_FILE, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         rows = list(reader)
-    print(f"\n  读取 {len(rows)} 种PFAS")
+    print(f"\n  read {len(rows)} PFAS")
 
-    # 确认列
+    # confirmcolumn
     header = list(rows[0].keys()) if rows else []
-    print(f"  列名 (前10): {header[:10]}")
+    print(f"  column (10): {header[:10]}")
     
-    # 找SMILES列
+    # 找SMILEScolumn
     smiles_col = None
     name_col = None
     for c in header:
@@ -138,15 +138,15 @@ def main():
             name_col = c
     
     if not name_col:
-        name_col = header[0]  # 第一列是PFAS abbreviation
-    print(f"  PFAS名称列: '{name_col}'")
-    print(f"  SMILES列:   '{smiles_col}'")
+        name_col = header[0]  # 第一columnisPFAS abbreviation
+    print(f"  PFASname column: '{name_col}'")
+    print(f"  SMILEScolumn:   '{smiles_col}'")
 
     if not smiles_col:
-        print("❌ 找不到SMILES列！")
+        print("❌ not foundSMILEScolumn！")
         sys.exit(1)
 
-    # 逐条处理
+    # process per row
     desc_names_full = [d[0] for d in Descriptors._descList]
     pfas_feature_names = [
         "carbon_count", "fluorine_count", "has_sulfonate",
@@ -168,13 +168,13 @@ def main():
         smiles = clean_smiles(raw_smiles)
         if smiles is None:
             failed_smiles.append(pfas_name)
-            print(f"  [{i+1}/{len(rows)}] {pfas_name} ❌ 空/无效SMILES: '{raw_smiles}'")
+            print(f"  [{i+1}/{len(rows)}] {pfas_name} ❌ empty/invalidSMILES: '{raw_smiles}'")
             continue
 
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
             failed_parse.append(pfas_name)
-            print(f"  [{i+1}/{len(rows)}] {pfas_name} ❌ 解析失败: {smiles[:60]}")
+            print(f"  [{i+1}/{len(rows)}] {pfas_name} ❌ parse failed: {smiles[:60]}")
             continue
 
         desc = calc_all_descriptors(mol)
@@ -192,20 +192,20 @@ def main():
 
         if (i + 1) % 10 == 0:
             elapsed = time.time() - start_time
-            print(f"  [{i+1}/{len(rows)}] ✅ 成功 {succeeded}, 耗时 {elapsed:.1f}s")
+            print(f"  [{i+1}/{len(rows)}] ✅ success {succeeded}, elapsed {elapsed:.1f}s")
 
-    # 统计
+    # statistics
     elapsed = time.time() - start_time
-    print(f"\n  ✅ 成功: {succeeded}/{len(rows)}")
-    print(f"  ❌ 空SMILES: {len(failed_smiles)} — {failed_smiles}")
-    print(f"  ❌ 解析失败: {len(failed_parse)} — {failed_parse}")
-    print(f"  总耗时: {elapsed:.1f} 秒")
+    print(f"\n  ✅ success: {succeeded}/{len(rows)}")
+    print(f"  ❌ emptySMILES: {len(failed_smiles)} — {failed_smiles}")
+    print(f"  ❌ parse failed: {len(failed_parse)} — {failed_parse}")
+    print(f"  total elapsed: {elapsed:.1f} s")
 
     if not results:
-        print("❌ 全部失败！")
+        print("❌ all failed！")
         sys.exit(1)
 
-    # 写入CSV
+    # write toCSV
     sample = results[0]
     fieldnames = ["PFAS_name", "Original_SMILES", "RDKIT_SMILES"] + \
                  [k for k in sample.keys() if k not in ("PFAS_name", "Original_SMILES", "RDKIT_SMILES")]
@@ -216,9 +216,9 @@ def main():
         for res in results:
             writer.writerow(res)
 
-    print(f"\n  输出: {OUTPUT_FILE}")
-    print(f"  {len(results)} 行 × {len(fieldnames)} 列")
-    print(f"\n✅ S1 完成！")
+    print(f"\n  output: {OUTPUT_FILE}")
+    print(f"  {len(results)} row × {len(fieldnames)} column")
+    print(f"\n✅ S1 ！")
 
 
 if __name__ == "__main__":

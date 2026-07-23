@@ -2,7 +2,7 @@
 """
 generate_figures.py
 ===================
-为修改后的论文生成全部 Figure 和 Table。
+generate all figures for the revised paper Figure and Table。
 
 Figure 1: Predicted vs. observed log Kd (Combined model, test set)
 Figure 2: Model performance comparison bar chart (R² and RPD)
@@ -14,7 +14,7 @@ Figure 6: HDBSCAN clusters + OECD class comparison (from existing 08 script outp
 Table 1: Model performance summary
 Table 2: Intra-subfamily MolWt-Kd correlations
 
-输出: paper/figures/ 和 paper/tables/ 下
+output: paper/figures/ and paper/tables/ 
 """
 
 import csv
@@ -202,8 +202,8 @@ def fig2_model_comparison():
         "Model A: RDKit only",
         "Model B: Soil only", 
         "Model C: Combined",
-        "Top 5 SHAP (分子描述符)",
-        "仅Corg + pH + CEC",
+        "Top 5 SHAP (molecular descriptors)",
+        "onlyCorg + pH + CEC",
     ]
     
     filtered = [r for r in results if r["model"] in key_models]
@@ -212,8 +212,8 @@ def fig2_model_comparison():
         "Model A: RDKit only": "RDKit only (136 feat.)",
         "Model B: Soil only": "Soil only (9 feat.)",
         "Model C: Combined": "Combined (145 feat.)",
-        "Top 5 SHAP (分子描述符)": "Top 2 MolWt feat.",
-        "仅Corg + pH + CEC": "Corg+pH+CEC",
+        "Top 5 SHAP (molecular descriptors)": "Top 2 MolWt feat.",
+        "onlyCorg + pH + CEC": "Corg+pH+CEC",
     }
     
     labels = [name_map.get(r["model"], r["model"]) for r in filtered]
@@ -454,21 +454,21 @@ def table1_model_performance():
             cv_r2 = r.get("cv_r2", "")
             # Find LOO_R² — only meaningful for descriptor-only and full-combined models
             loo_r2 = ""
-            # 新格式: 只有1行 "RDKit + soil properties" → Combined model LOO
-            # old format: 2行 "RDKit descriptors only" + "RDKit + soil properties"
+            # new format: onlyhas1row "RDKit + soil properties" → Combined model LOO
+            # old format: 2row "RDKit descriptors only" + "RDKit + soil properties"
             if len(loo_summary) == 1:
-                # 只有combined LOO的行
+                # onlyhascombined LOO的row
                 loo_row = loo_summary[0]
-                if "soil" in model.lower() or "所有特征" in model.lower():
+                if "soil" in model.lower() or "allfeature" in model.lower():
                     loo_r2 = loo_row["overall_r2"]
             else:
-                # 旧格式兼容: 2行模型类型
+                # old format compat: 2row model type
                 for s in loo_summary:
                     sm = s["model"].lower()
                     ml = model.lower()
-                    if "rdkit" in sm and "only" in sm and ("top" in ml or "描述符" in ml or "去掉土壤" in ml):
+                    if "rdkit" in sm and "only" in sm and ("top" in ml or "descriptors" in ml or "remove soil" in ml):
                         loo_r2 = s["overall_r2"]
-                    elif "soil" in sm and "所有特征" in ml:
+                    elif "soil" in sm and "allfeature" in ml:
                         loo_r2 = s["overall_r2"]
             writer.writerow([model, nf, r2, rmse, rpd, cv_r2, loo_r2])
     

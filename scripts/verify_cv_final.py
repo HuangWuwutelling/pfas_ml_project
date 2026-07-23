@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""多次CV取平均，消除分割随机性"""
+"""多次CVtake mean，eliminate split randomness"""
 import csv, os, numpy as np, warnings
 warnings.filterwarnings("ignore")
 
@@ -41,7 +41,7 @@ import xgboost as xgb
 
 X_all, y_all = extract(rows, all_desc)
 
-# 跑5次不同random_state的5-fold CV
+# 跑5differentrandom_state的5-fold CV
 results = []
 for seed in [42, 123, 456, 789, 1111]:
     model = xgb.XGBRegressor(n_estimators=500, max_depth=8, learning_rate=0.05,
@@ -50,9 +50,9 @@ for seed in [42, 123, 456, 789, 1111]:
     results.append(cv.mean())
     print(f"seed={seed}: CV_R² = {cv.mean():.4f} ± {cv.std():.4f}")
 
-print(f"\n平均 CV_R² = {np.mean(results):.4f} ± {np.std(results):.4f}")
+print(f"\n CV_R² = {np.mean(results):.4f} ± {np.std(results):.4f}")
 
-# 简化模型
+# Simplified model
 simple_cols = ["MolWt", "Corg_%", "pH", "CEC"]
 X_s, y_s = extract(rows, simple_cols)
 results_s = []
@@ -63,7 +63,7 @@ for seed in [42, 123, 456, 789, 1111]:
     results_s.append(cv_s.mean())
     print(f"seed={seed}: CV_R²(simple) = {cv_s.mean():.4f} ± {cv_s.std():.4f}")
 
-print(f"\n简化模型平均 CV_R² = {np.mean(results_s):.4f} ± {np.std(results_s):.4f}")
+print(f"\nSimplified model CV_R² = {np.mean(results_s):.4f} ± {np.std(results_s):.4f}")
 
 # Test set R² for simplified
 from sklearn.model_selection import train_test_split
@@ -74,4 +74,4 @@ model_s.fit(X_tr, y_tr)
 y_p = model_s.predict(X_te)
 r2 = r2_score(y_te, y_p)
 rmse = np.sqrt(mean_squared_error(y_te, y_p))
-print(f"\n简化模型 Test: R²={r2:.4f}, RMSE={rmse:.4f}, RPD={np.std(y_te)/rmse:.2f}")
+print(f"\nSimplified model Test: R²={r2:.4f}, RMSE={rmse:.4f}, RPD={np.std(y_te)/rmse:.2f}")
