@@ -1,6 +1,6 @@
 """
 fix chemical space figure: use jointt-SNEreduce (51 + 11Kjoint dimensionality reduction)。
-PCAis linear dimensionality reduction，不适合这个任务。
+PCAis linear dimensionality reduction，。
 """
 
 import numpy as np
@@ -57,20 +57,20 @@ with open(DESC_11K_FILE, "r") as f:
     reader = csv.DictReader(f)
     rows_11k = list(reader)
 
-# take11K的samefeature
+# take11Ksamefeature
 feat_11k = reader.fieldnames
 feat_11k_clean = [c for c in feat_11k if c not in {"DTXSID", "SMILES", "RDKIT_SMILES"}]
 common = [f for f in feat_names if f in feat_11k_clean]
 print(f"Common features: {len(common)}/{n_feat}")
 
-# sample11Kto2000points（太多t-SNEruns too slow）
+# sample11Kto2000points（t-SNEruns too slow）
 import random
 random.seed(42)
 n_11k = len(rows_11k)
 sample_size = min(2000, n_11k)
 rows_11k_sample = random.sample(rows_11k, sample_size)
 
-# build11K矩阵（by common features）
+# build11K（by common features）
 X_11k = np.zeros((sample_size, len(common)))
 feat_idx_map = {f: i for i, f in enumerate(common)}
 for i, row in enumerate(rows_11k_sample):
@@ -83,7 +83,7 @@ for i, row in enumerate(rows_11k_sample):
             except:
                 X_11k[i, j] = 0.0
 
-# rebuild51PFAS的共同feature matrix
+# rebuild51PFASfeature matrix
 X_51_aligned = np.zeros((len(rows_51), len(common)))
 for i, row in enumerate(rows_51):
     for col in common:
@@ -91,19 +91,19 @@ for i, row in enumerate(rows_51):
         v = row.get(col, "").strip()
         X_51_aligned[i, j] = float(v) if v else 0.0
 
-# 5. 联合standardize
+# 5. standardize
 print("Standardizing...")
 X_all = np.vstack([X_11k, X_51_aligned])
 scaler = StandardScaler()
 X_all_scaled = scaler.fit_transform(X_all)
 
-# 6. first usePCAreduce to50维加速
+# 6. first usePCAreduce to50
 print("PCA pre-reduction...")
 pca = PCA(n_components=50, random_state=42)
 X_all_pca = pca.fit_transform(X_all_scaled)
 print(f"PCA variance retained: {pca.explained_variance_ratio_.sum():.2%}")
 
-# 7. 联合t-SNE
+# 7. t-SNE
 print("t-SNE on combined (11K+51)...")
 tsne = TSNE(n_components=2, perplexity=30, random_state=42, n_jobs=-1, verbose=True)
 X_all_tsne = tsne.fit_transform(X_all_pca)
@@ -116,7 +116,7 @@ X_51_tsne = X_all_tsne[sample_size:]
 print("Plotting...")
 fig, ax = plt.subplots(figsize=(14, 10))
 
-# 11K背景
+# 11K
 ax.scatter(X_11k_tsne[:, 0], X_11k_tsne[:, 1], 
            c="lightgray", s=3, alpha=0.3, label=f"PFASMASTER (n={sample_size})")
 
@@ -128,7 +128,7 @@ scatter = ax.scatter(X_51_tsne[valid, 0], X_51_tsne[valid, 1],
                      c=logkd_vals[valid], cmap="coolwarm",
                      s=100, alpha=0.9, edgecolors="k", linewidth=0.8)
 
-# 标注PFASname
+# PFASname
 for i, (name, v) in enumerate(zip(names_51, valid)):
     if v:
         ax.annotate(name, (X_51_tsne[i, 0], X_51_tsne[i, 1]),

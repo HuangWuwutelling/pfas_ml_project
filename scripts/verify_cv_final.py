@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""多次CVtake mean，eliminate split randomness"""
+"""CVtake mean，eliminate split randomness"""
 import csv, os, numpy as np, warnings
 warnings.filterwarnings("ignore")
 
@@ -41,7 +41,7 @@ import xgboost as xgb
 
 X_all, y_all = extract(rows, all_desc)
 
-# 跑5differentrandom_state的5-fold CV
+# 5differentrandom_state5-fold CV
 results = []
 for seed in [42, 123, 456, 789, 1111]:
     model = xgb.XGBRegressor(n_estimators=500, max_depth=8, learning_rate=0.05,

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 S6b_loo_combined_fix.py
-re-runCombinedmodel LOO validation，生成detailCSV
-also confirm simplified model (MolWt + Corg + pH + CEC) 的R²
+re-runCombinedmodel LOO validation，detailCSV
+also confirm simplified model (MolWt + Corg + pH + CEC) R²
 """
 import csv, os, sys, numpy as np, warnings
 warnings.filterwarnings("ignore")
@@ -161,14 +161,14 @@ med = sum((combined_r2 > 0) & (combined_r2 <= 0.5))
 poor = sum(combined_r2 <= 0)
 print(f"  distribution: good(>0.5)={good} medium(0~0.5)={med} bad(<=0)={poor}")
 
-# worst5个
+# worst5
 idx = np.argsort(combined_r2)
 print(f"\n  bad5:")
 for j in idx[:5]:
     r = all_results[j]
     print(f"    ⚠️ {r['test_pfas']:<18} R²={r['r2']:.3f} n={r['n_test']}")
 
-# saveLOOaggregate to kd_leave_one_out_summary.csv（覆盖S6的oldresult）
+# saveLOOaggregate to kd_leave_one_out_summary.csv（S6oldresult）
 OUT_SUMMARY = os.path.join(SI_DIR, "kd_leave_one_out_summary.csv")
 n_positive = sum(combined_r2 > 0)
 n_total = len(combined_r2)

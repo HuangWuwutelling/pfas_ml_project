@@ -2,13 +2,13 @@
 """
 S1_calc_descriptors_51pfas.py
 |==============================
-|[论文core] compute51PFAS的RDKitmolecular descriptors（for应§2.2）
+|[core] compute51PFASRDKitmolecular descriptors（for§2.2）
 |
-|input: data/paper/PFAS_Properties.csv (51PFAS, 含Smilescolumn)
+|input: data/paper/PFAS_Properties.csv (51PFAS, Smilescolumn)
 |output: data/paper/descriptors_51pfas.csv
-|      (51row: PFAS名 + Smiles + RDKIT_SMILES + 225个RDKitdescriptors + PFASspecific features)
+|      (51row: PFAS + Smiles + RDKIT_SMILES + 225RDKitdescriptors + PFASspecific features)
 |
-|运row:
+|row:
 |  cd <project_root>
 |  .venv_py311/bin/python scripts/paper_01_calc_descriptors.py
 """
@@ -38,7 +38,7 @@ except ImportError:
 
 
 def clean_smiles(smiles):
-    """清理SMILES：remove |lp:...| extension markers and other non-standard formats"""
+    """SMILES：remove |lp:...| extension markers and other non-standard formats"""
     if not smiles or not isinstance(smiles, str):
         return None
     s = smiles.strip()
@@ -92,7 +92,7 @@ def calc_pfas_specific_features(mol):
     # substructure match
     sulfonate = Chem.MolFromSmarts("[S](=O)(=O)[O]")
     carboxyl = Chem.MolFromSmarts("[CX3](=O)[OX2]")
-    ether = Chem.MolFromSmarts("[CX4][OX2][CX4]")  # saturated ether bonds only C-O-C，不含酯键
+    ether = Chem.MolFromSmarts("[CX4][OX2][CX4]")  # saturated ether bonds only C-O-C，
     if sulfonate and mol.HasSubstructMatch(sulfonate):
         features["has_sulfonate"] = 1
     if carboxyl and mol.HasSubstructMatch(carboxyl):
@@ -127,7 +127,7 @@ def main():
     header = list(rows[0].keys()) if rows else []
     print(f"  column (10): {header[:10]}")
     
-    # 找SMILEScolumn
+    # SMILEScolumn
     smiles_col = None
     name_col = None
     for c in header:
@@ -138,7 +138,7 @@ def main():
             name_col = c
     
     if not name_col:
-        name_col = header[0]  # 第一columnisPFAS abbreviation
+        name_col = header[0]  # columnisPFAS abbreviation
     print(f"  PFASname column: '{name_col}'")
     print(f"  SMILEScolumn:   '{smiles_col}'")
 

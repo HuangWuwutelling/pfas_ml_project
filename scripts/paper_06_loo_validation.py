@@ -5,17 +5,17 @@ S6_leave_one_out_validation.py
 leave-one-compound cross-validation (Leave-One-PFAS-Out Cross Validation)
 
 core question:
-  can model predict"never seen"的PFAS的Kd？
-  随机80/20split may overestimate performance（同一PFASmay appear in both train and test sets）。
+  can model predict"never seen"PFASKd？
+  80/20split may overestimate performance（PFASmay appear in both train and test sets）。
 
 method:
-  loop47次（每1PFASdo one test set）:
+  loop47（1PFASdo one test set）:
     training set: exceptPFASall data outside
-    test set: 该PFAS的alldata
+    test set: PFASalldata
     eval: R², RMSE, RPD
 
-for比:
-  - Model A: onlyRDKitdescriptors (MolWtonly2个)
+for:
+  - Model A: onlyRDKitdescriptors (MolWtonly2)
   - Model C: RDKit + soil properties
 
 input: data/paper/feature_matrix_kd.csv
@@ -61,7 +61,7 @@ def load_data():
 
 
 def extract_data(rows, fieldnames, feature_subset=None):
-    """extract from row listX矩阵andy向量"""
+    """extract from row listXandy"""
     all_desc = [c for c in fieldnames if c not in NON_FEATURE]
     
     if feature_subset == "desc_only":
@@ -94,7 +94,7 @@ def extract_data(rows, fieldnames, feature_subset=None):
             except:
                 pass
     
-    # removeymissing的row
+    # removeymissingrow
     valid = ~np.isnan(y)
     X = X[valid]
     y = y[valid]
@@ -130,12 +130,12 @@ def run_loo(rows, fieldnames, pfas_groups, feature_subset, model_label):
     all_y_true = []
     all_y_pred = []
     
-    # 每PFAS一个loop
+    # PFASloop
     pfas_list = sorted(pfas_groups.keys())
     n_pfas = len(pfas_list)
     
     for i, test_pfas in enumerate(pfas_list):
-        # training set = all non-test_pfas的row
+        # training set = all non-test_pfasrow
         train_rows = []
         for name, group in pfas_groups.items():
             if name != test_pfas:
@@ -165,7 +165,7 @@ def run_loo(rows, fieldnames, pfas_groups, feature_subset, model_label):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
         
-        # 评价
+        # 
         r2 = r2_score(y_test, y_pred)
         rmse = np.sqrt(mean_squared_error(y_test, y_pred))
         mae = mean_absolute_error(y_test, y_pred)
@@ -189,7 +189,7 @@ def run_loo(rows, fieldnames, pfas_groups, feature_subset, model_label):
         all_y_true.extend(y_test.tolist())
         all_y_pred.extend(y_pred.tolist())
         
-        # 给eachPFAS的R²label good/bad
+        # eachPFASR²label good/bad
         perf_tag = "✅" if r2 > 0 else "⚠️"
         print(f"  [{i+1}/{n_pfas}] {perf_tag} {test_pfas:<20} "
               f"n_test={n_test:<3} R²={r2:.3f} RMSE={rmse:.4f} RPD={rpd:.2f}")
@@ -242,7 +242,7 @@ def save_visualization(all_results_list, all_predictions_list, model_labels):
         
         n_models = len(all_results_list)
         
-        # ===== fig1: 每PFAS的R²bar chart =====
+        # ===== fig1: PFASR²bar chart =====
         fig, axes = plt.subplots(n_models, 1, figsize=(12, 4 * n_models))
         if n_models == 1:
             axes = [axes]
@@ -284,7 +284,7 @@ def save_visualization(all_results_list, all_predictions_list, model_labels):
         plt.close()
         print(f"\n✅ fig: {figpath}")
         
-        # ===== fig2: 预测 vs 真实散ptfig（all points merged） =====
+        # ===== fig2:  vs ptfig（all points merged） =====
         fig, axes = plt.subplots(1, n_models, figsize=(6 * n_models, 5))
         if n_models == 1:
             axes = [axes]
@@ -339,7 +339,7 @@ def main():
         all_summaries.append(summary)
         all_predictions.append(predictions)
         
-        # save eachPFAS的detailresult
+        # save eachPFASdetailresult
         out_res = OUTPUT_RESULTS.replace(".csv", f"_{model_label.split()[0].lower()}.csv")
         with open(out_res, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=results[0].keys())

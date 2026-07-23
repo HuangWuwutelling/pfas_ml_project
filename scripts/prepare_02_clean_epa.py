@@ -2,24 +2,24 @@
 """
 S1.5_clean_epa_list.py
 |==============================
-|[论文core] 清洗EPA PFASMASTERlist，作为11Kdescriptorspipeline的input（§2.2 / §3.4）
+|[core] EPA PFASMASTERlist，11Kdescriptorspipelineinput（§2.2 / §3.4）
 |
 |input: data/raw/pfas_master_list.csv   (EPA PFASMASTER, 22,987original records)
-|output: data/processed/pfas_clean.csv   (after cleaning ~10,972rows containingSMILES的record)
+|output: data/processed/pfas_clean.csv   (after cleaning ~10,972rows containingSMILESrecord)
 |
 |key filters:
 |  1. must haveSMILES（non-empty and not N/A）
 |  2. SMILESlength reasonable (5 < len < 500)
-|  3. deduplicate（同一SMILESkeep only first）
-|  4. keep only organic molecules（含 C 或 c atom）
+|  3. deduplicate（SMILESkeep only first）
+|  4. keep only organic molecules（ C  c atom）
 |
-|运row:
+|row:
 |  cd <project_root>
 |  python scripts/EPA cleaner.py
 |
 |description:
 |  prepare_03_descriptors_11k.py depends on this script's output。
-|  if你only想跑 core pipeline（paper_03 → paper_09），不need这个脚this。
+|  ifonly core pipeline（paper_03 → paper_09），needthis。
 |
 |original script: scripts/_archive/EPA cleaner.py（restored on 2026-07-23，
 |         revise docstring；script logic unchanged）
@@ -73,12 +73,12 @@ with open(INPUT_FILE, "r", encoding="utf-8-sig") as f:
             continue
         smiles_seen.add(smiles)
 
-        # basic organic check（含C）
+        # basic organic check（C）
         if "C" not in smiles and "c" not in smiles:
             skipped_not_organic += 1
             continue
 
-        # extractDTXSID（第一columnisURL）
+        # extractDTXSID（columnisURL）
         dtxsid_raw = row.get("DTXSID", "")
         if "/" in dtxsid_raw:
             dtxsid = dtxsid_raw.split("/")[-1]
@@ -118,7 +118,7 @@ with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as f:
 print(f"\n  ✅ cleaned list saved: {OUTPUT_FILE}")
 print(f"     {len(clean_rows):,} compounds")
 
-# simple长度distribution
+# simpledistribution
 lengths = [len(r["SMILES"]) for r in clean_rows]
 print(f"\n  SMILES: min={min(lengths)}, max={max(lengths)}, "
       f"mean={sum(lengths)/len(lengths):.0f}")

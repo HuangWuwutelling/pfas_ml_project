@@ -2,10 +2,10 @@
 """
 S5_core_descriptors_analysis.py
 ================================
-core descriptor filter + 碳链长度relationship analysis
+core descriptor filter + relationship analysis
 
 Part 1: fromSHAP Top 20select core descriptors，build simplified model
-Part 2: MolWt/碳链长度 vs Kdrelationship analysis，interpret cluster results
+Part 2: MolWt/ vs Kdrelationship analysis，interpret cluster results
 
 input: data/paper/feature_matrix_kd.csv
 output: data/paper/kd_simplified_results.csv
@@ -58,7 +58,7 @@ def extract_xy(rows, fieldnames, feature_names):
     """extract feature matrix from dataXandtargety"""
     all_desc = [c for c in fieldnames if c not in NON_FEATURE]
     
-    # if指定了featuresubset，take only these
+    # iffeaturesubset，take only these
     if feature_names is not None:
         use_cols = [c for c in feature_names if c in all_desc]
     else:
@@ -86,7 +86,7 @@ def extract_xy(rows, fieldnames, feature_names):
             except:
                 pass
     
-    # removey为NaN的row
+    # removeyNaNrow
     valid = ~np.isnan(y)
     X = X[valid]
     y = y[valid]
@@ -123,7 +123,7 @@ def filtered_feature_set(rows, fieldnames, shap_ranking, filter_type="top5",
     top_n = {"top5": 5, "top10": 10, "top20": 20}
     if filter_type in top_n:
         top_feats = [f for f, _ in shap_ranking[:top_n[filter_type]]]
-        # if在all_desc中
+        # ifall_desc
         result = [f for f in top_feats if f in all_desc]
         if exclude_soil:
             result = [f for f in result if f not in SOIL_FEATURES]
@@ -133,7 +133,7 @@ def filtered_feature_set(rows, fieldnames, shap_ranking, filter_type="top5",
         return [f for f in all_desc if f not in SOIL_FEATURES]
     
     if filter_type == "lowcorr":
-        # first fromSHAP Top 30开始，remove high-correlation
+        # first fromSHAP Top 30，remove high-correlation
         candidates = [f for f, _ in shap_ranking[:30] if f in all_desc]
         if exclude_soil:
             candidates = [f for f in candidates if f not in SOIL_FEATURES]
@@ -141,7 +141,7 @@ def filtered_feature_set(rows, fieldnames, shap_ranking, filter_type="top5",
         X, y, _ = extract_xy(rows, fieldnames, candidates)
         corr_mat = np.abs(np.corrcoef(X.T))
         
-        # greedy selection：starting from most important，remove highly correlated with selected(r>0.95)的
+        # greedy selection：starting from most important，remove highly correlated with selected(r>0.95)
         selected = []
         for i, feat in enumerate(candidates[:min(30, len(candidates))]):
             if not selected:
@@ -246,12 +246,12 @@ def run_simplified_models(rows, fieldnames, shap_ranking):
 
 
 def analyze_structure_kd_relationship(rows, fieldnames):
-    """Part 2: analyze MolWt andKd的relationship"""
+    """Part 2: analyze MolWt andKdrelationship"""
     print("\n" + "=" * 60)
     print("  Part 2: molecular structure vs Kdrelationship analysis")
     print("=" * 60)
     
-    # byPFASname aggregation：平均log Kd + PFASsubfamily + load from descriptors filemolwt, carbon_count, fluorine_count
+    # byPFASname aggregation：log Kd + PFASsubfamily + load from descriptors filemolwt, carbon_count, fluorine_count
     from collections import defaultdict
     
     # load meanlog Kd
@@ -267,7 +267,7 @@ def analyze_structure_kd_relationship(rows, fieldnames):
         pfas_count[name] = pfas_count.get(name, 0) + 1
     pfas_mean = {n: pfas_logkd[n] / pfas_count[n] for n in pfas_logkd}
     
-    # from the1row extractMolWt（all rows identical，because samePFAS的molecular descriptorssame）
+    # from the1row extractMolWt（all rows identical，because samePFASmolecular descriptorssame）
     pfas_molwt = {}
     pfas_carbon = {}
     pfas_fluorine = {}
@@ -281,8 +281,8 @@ def analyze_structure_kd_relationship(rows, fieldnames):
             v = row.get("fluorine_count", "").strip()
             pfas_fluorine[name] = float(v) if v else np.nan
     
-    # subfamily（fromdata中推断）
-    # use existingCSVhassubfamilyinfo的file
+    # subfamily（fromdata）
+    # use existingCSVhassubfamilyinfofile
     from collections import Counter
     
     # aggregate by subfamily
@@ -356,9 +356,9 @@ def analyze_structure_kd_relationship(rows, fieldnames):
             writer.writerows(correlation_results)
         print(f"\n✅ structurecorrelation: {corr_path}")
     
-    # 聚set类statistics（fromLevel 2verifyfile）
+    # setstatistics（fromLevel 2verifyfile）
     print(f"\n  key findings:")
-    print(f"  PFCA 12homologs: MolWt vs log Kd correlation")
+    print(f"  PFCA 12 homologs: MolWt vs log Kd correlation")
     for items in [subfam_groups.get("PFCA", [])]:
         if len(items) >= 3:
             m = np.array([it["molwt"] for it in items])
@@ -368,7 +368,7 @@ def analyze_structure_kd_relationship(rows, fieldnames):
             r_cl, _ = pearsonr(c, l)
             print(f"    MolWt vs log Kd: r={r_ml:.3f} (p={p_ml:.2e})")
             print(f"    C number vs log Kd: r={r_cl:.3f}")
-            print(f"    rationale: per additional1CF2, log Kdadd{np.polyfit(c, l, 1)[0]:.3f}")
+            print(f"    rationale: per additional 1 CF2, log Kd increases by {np.polyfit(c, l, 1)[0]:.3f}")
     
     return subfam_groups
 
@@ -380,14 +380,14 @@ def save_visualizations(all_results, subfam_groups, fieldnames):
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         
-        # ===== fig1: Simplified model性能comparison bar chart =====
+        # ===== fig1: Simplified modelcomparison bar chart =====
         fig, axes = plt.subplots(1, 2, figsize=(14, 5))
         
-        # R²for比
+        # R²for
         ax = axes[0]
         labels = [r["model"][:20] for r in all_results]
         r2_vals = [r["r2"] for r in all_results]
-        colors_bar = ["#4daf4a" if "Top" in r["model"] or "低" in r["model"] 
+        colors_bar = ["#4daf4a" if "Top" in r["model"] or "" in r["model"] 
                       else ("#377eb8" if "soil" in r["model"] else "#e41a1c") 
                       for r in all_results]
         bars = ax.barh(range(len(labels)), r2_vals, color=colors_bar, alpha=0.8)
@@ -403,7 +403,7 @@ def save_visualizations(all_results, subfam_groups, fieldnames):
             ax.text(bar.get_width() + 0.01, bar.get_y() + bar.get_height()/2,
                    f"{val:.3f}", va="center", fontsize=7)
         
-        # RPDfor比
+        # RPDfor
         ax = axes[1]
         rpd_vals = [r["rpd"] for r in all_results]
         bars = ax.barh(range(len(labels)), rpd_vals, color=colors_bar, alpha=0.8)
@@ -421,7 +421,7 @@ def save_visualizations(all_results, subfam_groups, fieldnames):
         figpath = os.path.join(SI_DIR, "kd_core_model_comparison.png")
         plt.savefig(figpath, dpi=200, bbox_inches="tight")
         plt.close()
-        print(f"\n✅ fig1 (Modelfor): {figpath}")
+        print(f"\n✅ fig1 (model comparison): {figpath}")
         
         # ===== fig2: MolWt vs log Kd (color by subfamily) =====
         fig, ax = plt.subplots(figsize=(10, 7))
@@ -436,7 +436,7 @@ def save_visualizations(all_results, subfam_groups, fieldnames):
                 l = [it["logkd"] for it in items]
                 ax.scatter(m, l, c=[cmap[i % len(cmap)]], s=80, alpha=0.8, 
                           edgecolors="k", linewidth=0.5, label=f"{sf} (n={len(items)})")
-                # 标注PFASname
+                # PFASname
                 for it in items:
                     ax.annotate(it["name"], (it["molwt"], it["logkd"]),
                                fontsize=6, alpha=0.7, ha="center", va="bottom")
@@ -474,7 +474,7 @@ def main():
     # visualization
     save_visualizations(all_results, subfam_groups, fieldnames)
     
-    print(f"\n✅ S5 !")
+    print(f"\n✅ S5 complete!")
     print(f"  result: {OUTPUT_RESULTS}")
     print(f"  correlation: {OUTPUT_CORR}")
 

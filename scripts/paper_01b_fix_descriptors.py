@@ -2,17 +2,17 @@
 """
 paper_01b_fix_descriptors.py
 ============================
-修复 SI xlsx 中failed的 2  PFAS 的 SMILES field：
-  - 8:2 FtSaB  (SMILES = "N.A."  → use PubChem CID 163360452 的 SMILES)
-  - 6:2 FtSaAm  (SMILES parenthesis mismatch → 加 1 right parens)
+ SI xlsx failed 2  PFAS  SMILES field：
+  - 8:2 FtSaB  (SMILES = "N.A."  → use PubChem CID 163360452  SMILES)
+  - 6:2 FtSaAm  (SMILES parenthesis mismatch →  1 right parens)
 
 source：
   - PubChem CID 163360452 (8:2 FtSaB)
   - PubChem CID 138394385 (6:2 FtSaAm)
 
-input: data/paper/PFAS_Properties.csv   (含 51  PFAS original SMILES)
-      data/paper/descriptors_51pfas.csv (paper_01 output, 49 rows succeeded, 缺 2 row)
-output: data/paper/descriptors_51pfas.csv (追加/replace 2 failures PFAS → 51 row)
+input: data/paper/PFAS_Properties.csv   ( 51  PFAS original SMILES)
+      data/paper/descriptors_51pfas.csv (paper_01 output, 49 rows succeeded,  2 row)
+output: data/paper/descriptors_51pfas.csv (/replace 2 failures PFAS → 51 row)
 
 if paper_01 already fixed SMILES but this script also fixes, is no-op (just check row count)
 """
@@ -83,12 +83,12 @@ def main():
 
     existing_names = {r["PFAS_name"].strip() for r in existing}
 
-    # 2. read PFAS properties (for subfamily 等元data)
+    # 2. read PFAS properties (for subfamily data)
     with open(PROPS_FILE, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         props = {r["PFAS abbreviation"].strip(): r for r in reader}
 
-    # 3. find what needs fixing 2 个 PFAS
+    # 3. find what needs fixing 2  PFAS
     new_rows = []
     for pfas_name, correct_smiles in SMILES_FIX.items():
         if pfas_name in existing_names:
@@ -109,14 +109,14 @@ def main():
 
         # compute all RDKit descriptors
         all_desc = calc_all_descriptors(mol)
-        # compute PFAS 特has features
+        # compute PFAS has features
         pfas_feat = calc_pfas_specific_features(mol)
 
         # merge: PFAS_name, Original_SMILES, RDKIT_SMILES + desc + pfas_feat
         row = {"PFAS_name": pfas_name}
         row["Original_SMILES"] = props[pfas_name].get("Smiles", "")
         row["RDKIT_SMILES"] = correct_smiles
-        # extract subfamily / Empirical formula 等
+        # extract subfamily / Empirical formula 
         for key in ["subfamily", "Empirical formula", "%F", "CAS number",
                     "C number", "F number", "H number", "N number", "S number",
                     "O number", "Cl number", "P number", "Molecular weight"]:
@@ -125,7 +125,7 @@ def main():
         # write all RDKit descriptors
         for k, v in all_desc.items():
             row[k] = v
-        # write to PFAS 特has features
+        # write to PFAS has features
         for k, v in pfas_feat.items():
             row[k] = v
 

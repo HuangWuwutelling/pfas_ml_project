@@ -2,22 +2,22 @@
 """
 06_calc_descriptors_full.py
 ============================
-use RDKit batch compute EPA PFASMASTER full list（~11,000）的molecular descriptorsandfingerprint。
+use RDKit batch compute EPA PFASMASTER full list（~11,000）molecular descriptorsandfingerprint。
 
 input: data/processed/pfas_clean.csv
-       （清洗的 EPA PFASMASTER list，10,972rows containingSMILES）
+       （ EPA PFASMASTER list，10,972rows containingSMILES）
 output: data/processed/pfas_descriptors_full.csv
-       （217个RDKitdescriptors + PFASspecific features）
+       （217RDKitdescriptors + PFASspecific features）
       data/processed/pfas_fingerprint_full.csv
-       （2048位ECFP4Morgan fingerprint）
+       （2048ECFP4Morgan fingerprint）
 
-and02_calc_descriptors.py的区别：
-  - inputfromPubChem的小dataset改为EPAClean的全量list
-  - SMILES直接from pfas_clean.csv 的 SMILES column read
+and02_calc_descriptors.py：
+  - inputfromPubChemdatasetEPACleanlist
+  - SMILESfrom pfas_clean.csv  SMILES column read
   - containsSMILESformat cleanup（remove |lp:...| extension marker）
   - output filename + _full suffix
 
-运row:
+row:
   python scripts/06_calc_descriptors_full.py
 
 estimated elapsed: 2-5min（11,000rows）
@@ -51,13 +51,13 @@ except ImportError:
 
 
 def clean_smiles(smiles):
-    """清理SMILES：remove |lp:...| extension markers and other non-standard formats"""
+    """SMILES：remove |lp:...| extension markers and other non-standard formats"""
     if not smiles or not isinstance(smiles, str):
         return None
     s = smiles.strip()
     if not s:
         return None
-    # remove |...| extension marker（RDKit不能解析），如 |lp:4:2,6:3...|
+    # remove |...| extension marker（RDKit）， |lp:4:2,6:3...|
     pipe_pos = s.find("|")
     if pipe_pos != -1:
         s = s[:pipe_pos].strip()
@@ -86,9 +86,9 @@ def calc_fingerprint(mol, radius=2, nbits=2048):
 
 
 def calc_pfas_specific_features(mol):
-    """computePFASspecific features（基atRDKitparsed mol object）"""
+    """computePFASspecific features（atRDKitparsed mol object）"""
     features = {
-        "carbon_count": 0,       # 碳atom count
+        "carbon_count": 0,       # atom count
         "fluorine_count": 0,     # F atom count
         "has_sulfonate": 0,      # contains sulfonate -S(=O)(=O)O
         "has_carboxyl": 0,       # contains carboxyl -C(=O)O
@@ -119,7 +119,7 @@ def calc_pfas_specific_features(mol):
         features["has_ether"] = 1
     if any(a.GetIsAromatic() for a in atoms):
         features["has_aromatic"] = 1
-    # 碳碳双键
+    # 
     for bond in mol.GetBonds():
         if bond.GetBondTypeAsDouble() == 2.0:
             begin = bond.GetBeginAtom()
@@ -171,7 +171,7 @@ def main():
         raw_smiles = row.get("SMILES", "")
         dtxsid = row.get("DTXSID", "?")
 
-        # 清理SMILES
+        # SMILES
         smiles = clean_smiles(raw_smiles)
         if smiles is None:
             print(f"  [{i+1}/{len(rows)}] {dtxsid} ❌ emptySMILES")
@@ -180,7 +180,7 @@ def main():
             skipped_no_smiles += 1
             continue
 
-        # 解析SMILES
+        # SMILES
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
             print(f"  [{i+1}/{len(rows)}] {dtxsid} ❌ parse failed: {smiles[:60]}")
@@ -192,7 +192,7 @@ def main():
         # compute standard descriptors
         desc = calc_all_descriptors(mol)
 
-        # 获takeRDKitnormalizedSMILES（for cross-dataset key matching）
+        # takeRDKitnormalizedSMILES（for cross-dataset key matching）
         rdkit_smiles_norm = Chem.MolToSmiles(mol)
 
         # computePFASspecific features

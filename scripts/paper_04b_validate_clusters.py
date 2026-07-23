@@ -6,24 +6,24 @@ Level 2: useRDKitdescriptor pair51PFASdo clustering，use experimentalKdvalidate
 
 core question:
   "from molecular structure alone（RDKitdescriptors）unsupervised clustering from，
-   whether can auto-separateKd高/lowPFASclass？"
+   whether can auto-separateKd/lowPFASclass？"
 
 workflow:
-  1. loaded51PFAS的RDKitdescriptors（fromS1）
-  2. extract per-PFAS from feature matrixPFAS的平均log Kd
+  1. loaded51PFASRDKitdescriptors（fromS1）
+  2. extract per-PFAS from feature matrixPFASlog Kd
   3. reduce（t-SNE）+ cluster（HDBSCAN）
   4. annotate mean on each clusterlog Kd
-  5. visualization: color=平均log Kd
-  6. extend to11,000PFAS的chemical spaceoverlay
+  5. visualization: color=log Kd
+  6. extend to11,000PFASchemical spaceoverlay
 
 input:
-  data/paper/descriptors_51pfas.csv        (51PFAS的RDKitdescriptors)
+  data/paper/descriptors_51pfas.csv        (51PFASRDKitdescriptors)
   data/paper/feature_matrix_kd.csv         (1227row × log Kd + feature)
-  data/processed/pfas_descriptors_full.csv (11,000PFAS的descriptors)
+  data/processed/pfas_descriptors_full.csv (11,000PFASdescriptors)
 
 output:
-  data/paper/kd_cluster_tsne.png           (t-SNEbylog Kd着色)
-  data/paper/kd_cluster_umap.png           (UMAPbylog Kd着色)
+  data/paper/kd_cluster_tsne.png           (t-SNEbylog Kd)
+  data/paper/kd_cluster_umap.png           (UMAPbylog Kd)
   data/paper/kd_chemical_space_11k.png     (11K + 51overlay plot)
   data/paper/kd_cluster_validation.csv     (clusterstatistics)
 """
@@ -44,7 +44,7 @@ OUTPUT_TABLE = os.path.join(SI_DIR, "kd_cluster_validation.csv")
 
 
 def load_51_descriptors():
-    """loaded51PFAS的RDKitdescriptors"""
+    """loaded51PFASRDKitdescriptors"""
     with open(DESC_51_FILE, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         rows = list(reader)
@@ -72,7 +72,7 @@ def load_51_descriptors():
 
 
 def load_mean_logkd():
-    """compute per-PFAS from feature matrixPFAS的平均log Kd"""
+    """compute per-PFAS from feature matrixPFASlog Kd"""
     with open(FEATURE_FILE, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         rows = list(reader)
@@ -97,7 +97,7 @@ def load_mean_logkd():
 
 
 def load_11k_descriptors(sample_rate=0.1):
-    """loaded11,000PFAS的descriptors(can sample)"""
+    """loaded11,000PFASdescriptors(can sample)"""
     if not os.path.exists(DESC_11K_FILE):
         print(f"  ⚠️ not found {DESC_11K_FILE}")
         return None, None
@@ -180,7 +180,7 @@ def run_hdbscan(X_embedded):
     n_noise = sum(labels == -1)
     print(f"  HDBSCAN: {n_clusters}clusters, noise: {n_noise}pt")
     
-    # ifcluster太多，改useKMeans
+    # ifcluster，useKMeans
     if n_clusters > 15:
         print(f"  num clusters ({n_clusters}), falling back to KMeans")
         return run_kmeans(X_embedded)
@@ -199,7 +199,7 @@ def run_kmeans(X_embedded, n_clusters=6):
 
 
 def save_cluster_table(names, labels, mean_logkd, subfamilies, output_path):
-    """save cluster statistics + 各PFAS的log Kd均val"""
+    """save cluster statistics + PFASlog Kdval"""
     with open(output_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["PFAS_name", "subfamily", "cluster", "mean_log_Kd", "n_samples"])
@@ -208,7 +208,7 @@ def save_cluster_table(names, labels, mean_logkd, subfamilies, output_path):
             mk = mean_logkd.get(name, "")
             writer.writerow([name, subfam, label, mk, n])
     
-    # clusterstatistics摘要
+    # clusterstatistics
     cluster_stats = {}
     for name, label in zip(names, labels):
         if label not in cluster_stats:
@@ -248,18 +248,18 @@ def save_visualization(X_51, X_11k, labels_51, mean_logkd, names_51):
         print("  ⚠️ matplotlibnot installed，skip figures")
         return
     
-    # color映射: log Kdfrom lowest(蓝)tohighest(红)
+    # color: log Kdfrom lowest()tohighest()
     logkd_vals = np.array([mean_logkd.get(n, np.nan) for n in names_51])
     valid_mask = ~np.isnan(logkd_vals)
     
-    # ===== fig1: 51PFAS的t-SNE, by meanlog Kd着色 =====
+    # ===== fig1: 51PFASt-SNE, by meanlog Kd =====
     fig, axes = plt.subplots(1, 2, figsize=(16, 7))
     
     ax = axes[0]
     scatter = ax.scatter(X_51[valid_mask, 0], X_51[valid_mask, 1],
                          c=logkd_vals[valid_mask], cmap="coolwarm",
                          s=80, alpha=0.8, edgecolors="k", linewidth=0.5)
-    # 标注PFASname
+    # PFASname
     for i, (name, v) in enumerate(zip(names_51, valid_mask)):
         if v:
             ax.annotate(name, (X_51[i, 0], X_51[i, 1]),
@@ -303,7 +303,7 @@ def save_visualization(X_51, X_11k, labels_51, mean_logkd, names_51):
     if X_11k is not None:
         fig, ax = plt.subplots(figsize=(12, 10))
         
-        # 11K背景pt
+        # 11Kpt
         ax.scatter(X_11k[:, 0], X_11k[:, 1], c="lightgray", s=3, alpha=0.3, label=f"11K PFAS (PFASMASTER)")
         
         # 51PFASforeground points
@@ -381,7 +381,7 @@ def main():
     X_51_scaled = standardize_features(X_51)
     print(f"  after standardization: mean≈{X_51_scaled.mean():.2e}, std≈{X_51_scaled.std():.2f}")
     
-    # 3. loaded11Kdataand做联合t-SNE
+    # 3. loaded11Kdataandt-SNE
     print("\n--- loaded11K PFASdescriptors ---")
     X_11k, rows_11k = load_11k_descriptors(sample_rate=0.2)
     
@@ -397,7 +397,7 @@ def main():
         common_feats = [f for f in feat_names if f in feat_11k_clean]
         print(f"  common features: {len(common_feats)}/{len(feat_names)}")
         
-        # re-extract51PFAS的common features
+        # re-extract51PFAScommon features
         X_51_common = np.zeros((len(names_51), len(common_feats)))
         for i, row in enumerate(rows_51):
             for j, col in enumerate(common_feats):
@@ -405,16 +405,16 @@ def main():
                 if v:
                     X_51_common[i, j] = float(v)
         
-        # re-extract11K的common features
+        # re-extract11Kcommon features
         X_11k_common = np.zeros((X_11k.shape[0], len(common_feats)))
-        # X_11k已经isnumpyarray but order may not match，userows_11kre-read
-        # actual上load_11k_descriptorsalready taken all features，but row-sampled
+        # X_11kisnumpyarray but order may not match，userows_11kre-read
+        # actualload_11k_descriptorsalready taken all features，but row-sampled
         # needs re-extraction
         pass
     
-    # simple版this：only on51做t-SNE，annotate on figurelog Kd
+    # simplethis：only on51t-SNE，annotate on figurelog Kd
     # for11Kdo separatelyt-SNEthen overlay bad，because dimensionality-reduced spaces differ
-    # 改usePCAproject：use51types of fittingPCA，把11Kproject to same space
+    # usePCAproject：use51types of fittingPCA，11Kproject to same space
     
     # 4. t-SNEreduce (51)
     X_tsne = run_tsne(X_51_scaled, perplexity=8)  # small dataset uses smallerperplexity
@@ -444,7 +444,7 @@ def main():
                 if v:
                     X_51_aligned[i, j] = float(v)
         
-        # rebuild11K矩阵
+        # rebuild11K
         n_11k = len(rows_11k)
         X_11k_aligned = np.zeros((n_11k, len(common_feats)))
         for i, row in enumerate(rows_11k):

@@ -457,7 +457,7 @@ def table1_model_performance():
             # new format: onlyhas1row "RDKit + soil properties" → Combined model LOO
             # old format: 2row "RDKit descriptors only" + "RDKit + soil properties"
             if len(loo_summary) == 1:
-                # onlyhascombined LOO的row
+                # onlyhascombined LOOrow
                 loo_row = loo_summary[0]
                 if "soil" in model.lower() or "allfeature" in model.lower():
                     loo_r2 = loo_row["overall_r2"]

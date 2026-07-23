@@ -2,19 +2,19 @@
 """
 S2_merge_features.py
 ====================
-融合SIdata：将S1的RDKitdescriptors + Final_data的soil properties + Kd → training feature matrix。
+SIdata：S1RDKitdescriptors + Final_datasoil properties + Kd → training feature matrix。
 
 input:
-  data/paper/descriptors_51pfas.csv   (51PFAS的RDKitdescriptors)
+  data/paper/descriptors_51pfas.csv   (51PFASRDKitdescriptors)
   data/paper/Final_data.csv           (1849experimental data rows)
 output:
   data/paper/feature_matrix_kd.csv    (1227row × ~250column: feature + target)
   data/paper/feature_matrix_kd_info.txt  (datastatistics)
 
 description:
-  matching method: PFAS缩写 (PFAS abbreviationcolumn) → PFAS_name
+  matching method: PFAS (PFAS abbreviationcolumn) → PFAS_name
   keep only log Kd rows with non-empty values and complete soil features。
-  target: log Kd (SI Excel的column58)
+  target: log Kd (SI Excelcolumn58)
 """
 
 import csv
@@ -42,7 +42,7 @@ SOIL_FEATURE_MAP = {
     "Al_g_kg": "Al ((g/kg))",
 }
 
-# targetcolumn名
+# targetcolumn
 TARGET_NAME = "log Kd ([-])"
 TARGET_ALT_NAME = "log Koc ([-])"
 KD_NAME = "Kd (L/Kg)"
@@ -81,7 +81,7 @@ def main():
     print("=" * 60)
     print(f"\n  RDKitdescriptors: {len(desc_rows)} PFAS, {len(desc_fieldnames)} column")
 
-    # 2. readFinal_data, useDictReaderbycolumn名访问
+    # 2. readFinal_data, useDictReaderbycolumn
     with open(FINAL_FILE, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         final_rows = list(reader)
@@ -128,7 +128,7 @@ def main():
             v = safe_float(row.get(col_name))
             soil_vals[feat_name] = v
         
-        # statistics哪些soil featuresmissing
+        # statisticssoil featuresmissing
         n_soil_missing = sum(1 for v in soil_vals.values() if v is None)
         
         # construct merged rows
@@ -141,7 +141,7 @@ def main():
         # add soil features
         for feat_name, val in soil_vals.items():
             merged_row[feat_name] = val
-        # 加入RDKitdescriptors
+        # RDKitdescriptors
         for fn in desc_fieldnames:
             merged_row[fn] = desc[fn]
         
@@ -193,11 +193,11 @@ def main():
     info_lines.append(f"  std={statistics.stdev(logkd_vals):.2f}")
     info_lines.append(f"")
 
-    # 打印statistics
+    # statistics
     for line in info_lines:
         print(f"  {line}")
     
-    # 写infofile
+    # infofile
     with open(INFO_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(info_lines))
     print(f"\n  statisticsinfo: {INFO_FILE}")
