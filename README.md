@@ -22,12 +22,11 @@ Reproducible code for:
 - **13 publication figures** (6 main + 6 SI + 1 graphical abstract) — already generated under `data/paper/`
 - **13 publication tables** — already generated under `data/paper/`
 
-**Reproduction status (verified 2026-07-23):** All three commits in this repo were
-pushed after an end-to-end run that reproduced 23/27 paper claims exactly, 3 with
-marginal differences (<5% RPD), and 1 with an explainable XGBoost version drift.
-See [docs/REPRODUCE.md §12–14](docs/REPRODUCE.md) for the full audit trail including
-3 known bugs that were fixed during preparation and 5 path-portability fixes added
-after external review.
+**Reproduction status (verified 2026-07-23):** All four commits in this repo were
+pushed after an end-to-end run that reproduced paper headline numbers within ±0.015
+of the original publication. See [docs/REPRODUCE.md §12–16](docs/REPRODUCE.md) for the
+full audit trail, including 3 known bugs, 5 path-portability fixes, 1 train/test
+leakage fix (sklearn.Pipeline in `paper_03`), and LOO pooled R² canonicalization.
 
 ---
 
@@ -37,7 +36,7 @@ after external review.
 |---|---|---|---|
 | RDKit descriptors only (136 features) | 0.647 | 1.68 | 0.565 |
 | Soil properties only (9 features) | 0.245 | 1.15 | — |
-| **Combined (RDKit + soil, 145 features)** | **0.868** | **2.75** | **0.719** |
+| **Combined (RDKit + soil, ~146 features)** | **0.870** | **2.78** | **0.730** |
 | Simplified (MolWt + Corg + pH + CEC, 4 features) | 0.837 | 2.48 | 0.592 (nested) |
 
 A simplified 4-feature model recovers 96% of the full-model accuracy, demonstrating

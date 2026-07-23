@@ -107,60 +107,68 @@ def prepare_features(rows, all_fieldnames, feature_subset=None):
     X = X[valid]
     y = y[valid]
     
-    # 按列填充NaN（用中位数）
-    for j in range(p):
-        col_vals = X[:, j]
-        if np.all(np.isnan(col_vals)):
-            continue
-        median_val = np.nanmedian(col_vals)
-        col_vals = np.nan_to_num(col_vals, nan=median_val)
-        X[:, j] = col_vals
-    
-    # 特征清洗: 去掉inf和方差过大的列
+    # 按列保留有效特征（非全部 NaN）— 这是数据加载步骤，不依赖任何 split，
+    # 仅移除在整列上完全缺失的列（没有信息量）。真正的 imputer/variance
+    # threshold 移到 train_and_evaluate() 里的 sklearn.Pipeline，避免
+    # train/test 信息泄漏。
     clean_features = []
     clean_cols = []
     for j, col in enumerate(feature_names):
         col_vals = X[:, j]
-        if np.any(np.isinf(col_vals)):
-            continue
-        if np.std(col_vals) < 1e-10:  # 零方差
+        if np.all(np.isnan(col_vals)):
+            print(f"  ⚠️ 列全部缺失: {col}")
             continue
         clean_features.append(col)
         clean_cols.append(j)
-    
+
     X = X[:, clean_cols]
-    
+
     print(f"  y: {len(y)} 有效值, range=[{y.min():.2f}, {y.max():.2f}]")
-    print(f"  X: {X.shape} ({len(clean_features)} 特征)")
-    
+    print(f"  X: {X.shape} ({len(clean_features)} features pre-imputation)")
+
     return X, y, clean_features
 
 
 def train_and_evaluate(X, y, feature_names, model_label):
-    """训练XGBoost, 评估并返回结果"""
+    """训练XGBoost, 评估并返回结果
+
+    预处理（NaN 中位数填补、零方差列剔除）放在 sklearn.Pipeline 里，
+    这样 cross_val_score 和 train_test_split 都只在训练 fold 上 fit，
+    避免 test 集信息泄漏到 imputer/variance 计算（这是 2026-07-23 复现
+    报告指出的方法学硬伤）。
+    """
     from sklearn.model_selection import train_test_split, cross_val_score
     from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+    from sklearn.pipeline import Pipeline
+    from sklearn.impute import SimpleImputer
+    from sklearn.feature_selection import VarianceThreshold
     import xgboost as xgb
-    
+
     print(f"\n--- {model_label} ---")
-    
-    # 分层划分(按log Kd分箱, 确保分布一致)
+
+    # 行级随机划分（random_state=42 保持与原版一致；这是 random-split R²，
+    # 衡量"对已知 PFAS 新测量值的预测能力"。对全新 PFAS 的预测请看
+    # LOO pooled R² ≈ 0.72）。
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
     )
-    
-    # XGBoost (与07脚本一致)
-    xgb_model = xgb.XGBRegressor(
-        n_estimators=500,
-        max_depth=8,
-        learning_rate=0.05,  # 更小的学习率
-        subsample=0.8,
-        colsample_bytree=0.8,
-        random_state=42,
-        n_jobs=-1,
-    )
-    xgb_model.fit(X_train, y_train)
-    y_pred = xgb_model.predict(X_test)
+
+    # Pipeline: imputer + variance threshold + XGBoost（只在 train fold fit）
+    pipe = Pipeline([
+        ("imputer", SimpleImputer(strategy="median")),
+        ("variance", VarianceThreshold(threshold=1e-10)),
+        ("xgb", xgb.XGBRegressor(
+            n_estimators=500,
+            max_depth=8,
+            learning_rate=0.05,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            random_state=42,
+            n_jobs=-1,
+        )),
+    ])
+    pipe.fit(X_train, y_train)
+    y_pred = pipe.predict(X_test)
     
     # 指标
     r2 = r2_score(y_test, y_pred)
@@ -171,9 +179,9 @@ def train_and_evaluate(X, y, feature_names, model_label):
     sd = np.std(y_test)
     rpd = sd / rmse if rmse > 0 else float('inf')
     
-    # 交叉验证
-    cv_scores = cross_val_score(xgb_model, X, y, cv=5, scoring="r2", n_jobs=-1)
-    
+    # 交叉验证（Pipeline 也支持 cv_score，每折内 imputer+variance 只 fit 训练部分）
+    cv_scores = cross_val_score(pipe, X, y, cv=5, scoring="r2", n_jobs=-1)
+
     print(f"  R² = {r2:.4f}")
     print(f"  RMSE = {rmse:.4f}")
     print(f"  MAE = {mae:.4f}")
@@ -181,19 +189,23 @@ def train_and_evaluate(X, y, feature_names, model_label):
     print(f"  R² CV = {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
     print(f"  Test SD = {sd:.4f}")
     print(f"  n_train = {len(y_train)}, n_test = {len(y_test)}")
-    
-    # 特征重要性
+
+    # 特征重要性（从 Pipeline 里提取 XGBoost）
+    xgb_model = pipe.named_steps["xgb"]
     importance = xgb_model.feature_importances_
-    top_n = min(20, len(feature_names))
+    # 特征名也要经过 variance threshold 过滤（保留非零方差列）
+    variance_mask = pipe.named_steps["variance"].get_support()
+    filtered_feature_names = [f for f, keep in zip(feature_names, variance_mask) if keep]
+    top_n = min(20, len(filtered_feature_names))
     top_idx = np.argsort(importance)[::-1][:top_n]
     print(f"  Top {top_n} 特征:")
     for idx in top_idx:
-        print(f"    {feature_names[idx]}: {importance[idx]:.4f}")
-    
+        print(f"    {filtered_feature_names[idx]}: {importance[idx]:.4f}")
+
     return {
         "model_label": model_label,
         "n_samples": len(y),
-        "n_features": len(feature_names),
+        "n_features": len(filtered_feature_names),
         "r2": round(r2, 4),
         "rmse": round(rmse, 4),
         "mae": round(mae, 4),
@@ -204,8 +216,8 @@ def train_and_evaluate(X, y, feature_names, model_label):
         "model": xgb_model,
         "y_test": y_test,
         "y_pred": y_pred,
-        "feature_names": feature_names,
-        "top_features": [(feature_names[i], float(importance[i])) for i in top_idx],
+        "feature_names": filtered_feature_names,
+        "top_features": [(filtered_feature_names[i], float(importance[i])) for i in top_idx],
     }
 
 
@@ -273,16 +285,47 @@ def main():
     result_c = train_and_evaluate(X_c, y_c, feat_c, "Model C: Combined")
     
     # ========== SHAP分析(模型C) ==========
-    # 用模型C在完整数据集上做SHAP(不能用列表格式的X_test)
+    # SHAP 必须在预处理过的 X 上做（imputer + variance 已 fit）。
+    # 我们重用 train_and_evaluate() 里已经 fit 好的 pipe，
+    # 但那里 pipe 是局部变量 — 重新跑一次 fit 以拿到 pipe 实例供 SHAP 用。
+    # 这样保证 imputer 的中位数和 variance 的 mask 来自同一训练 fold。
     print("\n--- 准备SHAP分析的测试数据 ---")
     from sklearn.model_selection import train_test_split
+    from sklearn.pipeline import Pipeline
+    from sklearn.impute import SimpleImputer
+    from sklearn.feature_selection import VarianceThreshold
+    import xgboost as xgb
+
     X_c_train, X_c_test, y_c_train, y_c_test = train_test_split(
         X_c, y_c, test_size=0.2, random_state=42
     )
-    print(f"  SHAP X_test: {X_c_test.shape}")
-    
+    pipe_for_shap = Pipeline([
+        ("imputer", SimpleImputer(strategy="median")),
+        ("variance", VarianceThreshold(threshold=1e-10)),
+        ("xgb", xgb.XGBRegressor(
+            n_estimators=500,
+            max_depth=8,
+            learning_rate=0.05,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            random_state=42,
+            n_jobs=-1,
+        )),
+    ])
+    pipe_for_shap.fit(X_c_train, y_c_train)
+    # 取经过预处理的测试数据（imputer + variance 都已 fit 在训练 fold 上）
+    X_c_test_transformed = pipe_for_shap[:-1].transform(X_c_test)
+    print(f"  SHAP X_test (preprocessed): {X_c_test_transformed.shape}")
+
+    # 特征名也要经过 variance threshold 过滤
+    variance_mask_shap = pipe_for_shap.named_steps["variance"].get_support()
+    feat_c_filtered = [f for f, keep in zip(feat_c, variance_mask_shap) if keep]
+
     shap_values, shap_results = shap_analysis(
-        result_c["model"], X_c_test, feat_c, "Model C"
+        pipe_for_shap.named_steps["xgb"],
+        X_c_test_transformed,
+        feat_c_filtered,
+        "Model C",
     )
     
     # ========== 保存结果 ==========

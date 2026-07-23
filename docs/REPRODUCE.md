@@ -396,7 +396,70 @@ the current list.
 
 ---
 
-## 15. License
+## 15. LOO pooled R² canonicalization (verified 2026-07-23)
+
+The 2026-07-23 external reproduction report (§10.4) flagged that the Combined
+LOO pooled R² appeared in three inconsistent places:
+
+| Source | Value |
+|---|---:|
+| `data/paper/kd_leave_one_out_summary.csv` (written by `paper_06b`) | 0.7304 |
+| Hard-coded print in `verify_check_loo_stats.py` | 0.7185 |
+| Independent reproduction | 0.7359 |
+
+**Canonical value**: **0.7304** is now the single source of truth. Reasoning:
+
+- It is produced by `paper_06b_loo_combined_fix.py` from 47 fold-wise XGBoost
+  models using `r2_score(all_y_true, all_y_pred)` — the genuine pooled metric.
+- `verify_check_loo_stats.py` was updated (2026-07-23) to **read** the value
+  from `kd_leave_one_out_summary.csv` instead of hard-coding 0.7185.
+- The 0.7359 figure from the report came from a Windows re-run with a
+  slightly different XGBoost thread schedule; XGBoost 3.2's multi-threaded
+  tree builder has minor non-determinism even with `random_state=42`.
+- 0.7304 vs paper 0.719: Δ=+0.011, consistent with the XGBoost 2.1→3.2
+  algorithmic drift documented in §12.
+
+**Updated headline in README.md and §10 of this document**: 0.7304 (Combined
+LOO pooled R²).
+
+---
+
+## 16. Train/test leakage fix in `paper_03` (verified 2026-07-23)
+
+The 2026-07-23 external reproduction report (`reproduction-report-2026-07-23.md`,
+§10.1–10.3) identified three methodology issues in `scripts/paper_03_model_kd.py`.
+These have been fixed and verified end-to-end:
+
+| # | Issue | Fix |
+|---|---|---|
+| 1 | `prepare_features()` applied median imputation and variance threshold to **all 1,227 rows before `train_test_split`**, meaning the test set participated in computing the median and the variance mask used during inference. The same issue propagated into `cross_val_score` since CV operated on the pre-processed matrix. | Imputation and variance threshold moved into a `sklearn.Pipeline` (`SimpleImputer(strategy="median")` + `VarianceThreshold(threshold=1e-10)` + `XGBRegressor`). The Pipeline is fit on `X_train` only and applied to `X_test` per fold, so the test set no longer influences preprocessing. |
+| 2 | Line 147 comment claimed "stratified split by log Kd bins" but the actual `train_test_split` call did not pass `stratify=...`. | Comment replaced with an accurate description: "row-level random split (random_state=42); measures prediction on *known* PFAS held-out measurements, not unseen compounds — see LOO pooled R² ≈ 0.72 for the unseen-PFAS estimate." |
+| 3 | SHAP analysis was called on the raw `X_test` (before imputer/variance fit), so feature importances were inconsistent with the model's actual input space. | SHAP now receives `pipe_for_shap[:-1].transform(X_c_test)` (preprocessed) and uses `feat_c_filtered` (variance-filtered feature names). |
+
+**Verified headline numbers after fix (run on 2026-07-23):**
+
+| Model | Old (pre-fix) | New (Pipeline) | Paper | Δ vs paper |
+|---|---:|---:|---:|---:|
+| Model A (RDKit) | R²=0.6472 | **R²=0.6472** | 0.647 | +0.000 |
+| Model B (Soil) | R²=0.2448 | **R²=0.2510** | 0.245 | +0.006 |
+| Model C (Combined) | R²=0.8729 | **R²=0.8703** | 0.868 | +0.002 |
+| Model C 5-fold CV | 0.5600 | **0.5480** | 0.561 | -0.013 |
+| Combined LOO pooled R² | 0.7304 | **0.7304** (unchanged — paper_06/06b were already fold-local) | 0.719 | +0.011 |
+
+**Interpretation:**
+- random-split R² is essentially unchanged (0.8729 → 0.8703); the row-level split is robust to whether the median is computed on the full matrix or just on the train fold, because XGBoost is non-linear.
+- 5-fold CV drops slightly (0.560 → 0.548) because CV is more sensitive — each fold's pipeline is fit on a smaller training subset, which is the **honest** estimate.
+- LOO pooled R² is unchanged (0.7304) because `paper_06` already extracted data per fold (no leakage there).
+- All four headline numbers remain within ±0.015 of the paper values, confirming the methodology fix preserves reproducibility while removing the leakage.
+
+**Files touched**: `scripts/paper_03_model_kd.py` only. The fix is
+self-contained — other scripts (`paper_05`, `paper_06`, `paper_09`) were
+already using fold-local preprocessing or operate on pre-computed outputs
+from `paper_03`.
+
+---
+
+## 17. License
 
 This reproduction code is released under the MIT License. See [LICENSE](../LICENSE).
 
