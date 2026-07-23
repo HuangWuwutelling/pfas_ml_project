@@ -4,8 +4,8 @@ S5_core_descriptors_analysis.py
 ================================
 core descriptor filter + relationship analysis
 
-Part 1: fromSHAP Top 20select core descriptors，build simplified model
-Part 2: MolWt/ vs Kdrelationship analysis，interpret cluster results
+Part 1: fromSHAP Top 20select core descriptors, build simplified model
+Part 2: MolWt/ vs Kdrelationship analysis, interpret cluster results
 
 input: data/paper/feature_matrix_kd.csv
 output: data/paper/kd_simplified_results.csv
@@ -58,7 +58,7 @@ def extract_xy(rows, fieldnames, feature_names):
     """extract feature matrix from dataXandtargety"""
     all_desc = [c for c in fieldnames if c not in NON_FEATURE]
     
-    # iffeaturesubset，take only these
+    # iffeaturesubset, take only these
     if feature_names is not None:
         use_cols = [c for c in feature_names if c in all_desc]
     else:
@@ -104,15 +104,15 @@ def extract_xy(rows, fieldnames, feature_names):
 def filtered_feature_set(rows, fieldnames, shap_ranking, filter_type="top5", 
                           exclude_soil=True, corr_threshold=0.95):
     """
-    generate feature subsets by strategy。
+    generate feature subsets by strategy. 
     
     filter_type: 
-      'top5' — SHAP5
-      'top10' — SHAP10
-      'top20' — SHAP20
-      'nosoil' — remove soil features
-      'lowcorr' — remove high-correlation(r>0.95)then takeTop
-      'alldesc' — all descriptors(excluding soil)
+      'top5' - SHAP5
+      'top10' - SHAP10
+      'top20' - SHAP20
+      'nosoil' - remove soil features
+      'lowcorr' - remove high-correlation(r>0.95)then takeTop
+      'alldesc' - all descriptors(excluding soil)
     """
     all_desc = [c for c in fieldnames if c not in NON_FEATURE]
     
@@ -133,7 +133,7 @@ def filtered_feature_set(rows, fieldnames, shap_ranking, filter_type="top5",
         return [f for f in all_desc if f not in SOIL_FEATURES]
     
     if filter_type == "lowcorr":
-        # first fromSHAP Top 30，remove high-correlation
+        # first fromSHAP Top 30, remove high-correlation
         candidates = [f for f, _ in shap_ranking[:30] if f in all_desc]
         if exclude_soil:
             candidates = [f for f in candidates if f not in SOIL_FEATURES]
@@ -141,7 +141,7 @@ def filtered_feature_set(rows, fieldnames, shap_ranking, filter_type="top5",
         X, y, _ = extract_xy(rows, fieldnames, candidates)
         corr_mat = np.abs(np.corrcoef(X.T))
         
-        # greedy selection：starting from most important，remove highly correlated with selected(r>0.95)
+        # greedy selection: starting from most important, remove highly correlated with selected(r>0.95)
         selected = []
         for i, feat in enumerate(candidates[:min(30, len(candidates))]):
             if not selected:
@@ -203,7 +203,7 @@ def train_xgb(X, y, feature_names, model_label):
 def run_simplified_models(rows, fieldnames, shap_ranking):
     """run multiple simplified model variants"""
     print("\n" + "=" * 60)
-    print("  Part 1: core descriptor filter — Simplified modelfor")
+    print("  Part 1: core descriptor filter - Simplified modelfor")
     print("=" * 60)
     
     model_configs = [
@@ -251,7 +251,7 @@ def analyze_structure_kd_relationship(rows, fieldnames):
     print("  Part 2: molecular structure vs Kdrelationship analysis")
     print("=" * 60)
     
-    # byPFASname aggregation：log Kd + PFASsubfamily + load from descriptors filemolwt, carbon_count, fluorine_count
+    # byPFASname aggregation: log Kd + PFASsubfamily + load from descriptors filemolwt, carbon_count, fluorine_count
     from collections import defaultdict
     
     # load meanlog Kd
@@ -267,7 +267,7 @@ def analyze_structure_kd_relationship(rows, fieldnames):
         pfas_count[name] = pfas_count.get(name, 0) + 1
     pfas_mean = {n: pfas_logkd[n] / pfas_count[n] for n in pfas_logkd}
     
-    # from the1row extractMolWt（all rows identical，because samePFASmolecular descriptorssame）
+    # from the1row extractMolWt(all rows identical, because samePFASmolecular descriptorssame)
     pfas_molwt = {}
     pfas_carbon = {}
     pfas_fluorine = {}
@@ -281,7 +281,7 @@ def analyze_structure_kd_relationship(rows, fieldnames):
             v = row.get("fluorine_count", "").strip()
             pfas_fluorine[name] = float(v) if v else np.nan
     
-    # subfamily（fromdata）
+    # subfamily(fromdata)
     # use existingCSVhassubfamilyinfofile
     from collections import Counter
     
@@ -356,7 +356,7 @@ def analyze_structure_kd_relationship(rows, fieldnames):
             writer.writerows(correlation_results)
         print(f"\n✅ structurecorrelation: {corr_path}")
     
-    # setstatistics（fromLevel 2verifyfile）
+    # setstatistics(fromLevel 2verifyfile)
     print(f"\n  key findings:")
     print(f"  PFCA 12 homologs: MolWt vs log Kd correlation")
     for items in [subfam_groups.get("PFCA", [])]:
@@ -453,7 +453,7 @@ def save_visualizations(all_results, subfam_groups, fieldnames):
         print(f"✅ fig2 (MolWt vs log Kd): {figpath}")
         
     except ImportError:
-        print("  ⚠️ matplotlibnot installed，skip figures")
+        print("  ⚠️ matplotlibnot installed, skip figures")
     except Exception as e:
         print(f"  ⚠️ figure save failed: {e}")
 
@@ -474,7 +474,7 @@ def main():
     # visualization
     save_visualizations(all_results, subfam_groups, fieldnames)
     
-    print(f"\n✅ S5 complete!")
+    print(f"\n✅ S5 complete!!")
     print(f"  result: {OUTPUT_RESULTS}")
     print(f"  correlation: {OUTPUT_CORR}")
 

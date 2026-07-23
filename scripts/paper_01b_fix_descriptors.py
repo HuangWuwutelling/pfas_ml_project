@@ -2,11 +2,11 @@
 """
 paper_01b_fix_descriptors.py
 ============================
- SI xlsx failed 2  PFAS  SMILES field：
+ SI xlsx failed 2  PFAS  SMILES field: 
   - 8:2 FtSaB  (SMILES = "N.A."  → use PubChem CID 163360452  SMILES)
   - 6:2 FtSaAm  (SMILES parenthesis mismatch →  1 right parens)
 
-source：
+source: 
   - PubChem CID 163360452 (8:2 FtSaB)
   - PubChem CID 138394385 (6:2 FtSaAm)
 
@@ -162,7 +162,7 @@ def main():
 
     print(f"\n  output: {INPUT_FILE}")
     print(f"  total row count: {len(existing)} row")
-    print("✅ fix complete！")
+    print("✅ fix complete! ")
 
 
 if __name__ == "__main__":

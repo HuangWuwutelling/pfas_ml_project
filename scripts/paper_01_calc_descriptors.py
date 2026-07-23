@@ -2,7 +2,7 @@
 """
 S1_calc_descriptors_51pfas.py
 |==============================
-|[core] compute51PFASRDKitmolecular descriptors（for§2.2）
+|[core] compute51PFASRDKitmolecular descriptors(for§2.2)
 |
 |input: data/paper/PFAS_Properties.csv (51PFAS, Smilescolumn)
 |output: data/paper/descriptors_51pfas.csv
@@ -38,7 +38,7 @@ except ImportError:
 
 
 def clean_smiles(smiles):
-    """SMILES：remove |lp:...| extension markers and other non-standard formats"""
+    """SMILES: remove |lp:...| extension markers and other non-standard formats"""
     if not smiles or not isinstance(smiles, str):
         return None
     s = smiles.strip()
@@ -92,7 +92,7 @@ def calc_pfas_specific_features(mol):
     # substructure match
     sulfonate = Chem.MolFromSmarts("[S](=O)(=O)[O]")
     carboxyl = Chem.MolFromSmarts("[CX3](=O)[OX2]")
-    ether = Chem.MolFromSmarts("[CX4][OX2][CX4]")  # saturated ether bonds only C-O-C，
+    ether = Chem.MolFromSmarts("[CX4][OX2][CX4]")  # saturated ether bonds only C-O-C, 
     if sulfonate and mol.HasSubstructMatch(sulfonate):
         features["has_sulfonate"] = 1
     if carboxyl and mol.HasSubstructMatch(carboxyl):
@@ -143,7 +143,7 @@ def main():
     print(f"  SMILEScolumn:   '{smiles_col}'")
 
     if not smiles_col:
-        print("❌ not foundSMILEScolumn！")
+        print("❌ not foundSMILEScolumn! ")
         sys.exit(1)
 
     # process per row
@@ -197,12 +197,12 @@ def main():
     # statistics
     elapsed = time.time() - start_time
     print(f"\n  ✅ success: {succeeded}/{len(rows)}")
-    print(f"  ❌ emptySMILES: {len(failed_smiles)} — {failed_smiles}")
-    print(f"  ❌ parse failed: {len(failed_parse)} — {failed_parse}")
+    print(f"  ❌ emptySMILES: {len(failed_smiles)} - {failed_smiles}")
+    print(f"  ❌ parse failed: {len(failed_parse)} - {failed_parse}")
     print(f"  total elapsed: {elapsed:.1f} s")
 
     if not results:
-        print("❌ all failed！")
+        print("❌ all failed! ")
         sys.exit(1)
 
     # write toCSV
@@ -218,7 +218,7 @@ def main():
 
     print(f"\n  output: {OUTPUT_FILE}")
     print(f"  {len(results)} row × {len(fieldnames)} column")
-    print(f"\n✅ S1 ！")
+    print(f"\n✅ S1 ! ")
 
 
 if __name__ == "__main__":

@@ -2,16 +2,16 @@
 """
 S4_validate_clusters.py
 =======================
-Level 2: useRDKitdescriptor pair51PFASdo clustering，use experimentalKdvalidate cluster results。
+Level 2: useRDKitdescriptor pair51PFASdo clustering, use experimentalKdvalidate cluster results. 
 
 core question:
-  "from molecular structure alone（RDKitdescriptors）unsupervised clustering from，
-   whether can auto-separateKd/lowPFASclass？"
+  "from molecular structure alone(RDKitdescriptors)unsupervised clustering from, 
+   whether can auto-separateKd/lowPFASclass? "
 
 workflow:
-  1. loaded51PFASRDKitdescriptors（fromS1）
+  1. loaded51PFASRDKitdescriptors(fromS1)
   2. extract per-PFAS from feature matrixPFASlog Kd
-  3. reduce（t-SNE）+ cluster（HDBSCAN）
+  3. reduce(t-SNE)+ cluster(HDBSCAN)
   4. annotate mean on each clusterlog Kd
   5. visualization: color=log Kd
   6. extend to11,000PFASchemical spaceoverlay
@@ -170,7 +170,7 @@ def run_hdbscan(X_embedded):
     try:
         import hdbscan
     except ImportError:
-        print("  ⚠️ hdbscannot installed，useKMeans")
+        print("  ⚠️ hdbscannot installed, useKMeans")
         return run_kmeans(X_embedded)
     
     print(f"\n--- HDBSCANcluster ---")
@@ -180,7 +180,7 @@ def run_hdbscan(X_embedded):
     n_noise = sum(labels == -1)
     print(f"  HDBSCAN: {n_clusters}clusters, noise: {n_noise}pt")
     
-    # ifcluster，useKMeans
+    # ifcluster, useKMeans
     if n_clusters > 15:
         print(f"  num clusters ({n_clusters}), falling back to KMeans")
         return run_kmeans(X_embedded)
@@ -245,7 +245,7 @@ def save_visualization(X_51, X_11k, labels_51, mean_logkd, names_51):
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError:
-        print("  ⚠️ matplotlibnot installed，skip figures")
+        print("  ⚠️ matplotlibnot installed, skip figures")
         return
     
     # color: log Kdfrom lowest()tohighest()
@@ -339,15 +339,15 @@ def main():
     X_51, names_51, feat_names = load_51_descriptors()
     mean_logkd = load_mean_logkd()
     
-    # subfamily info（fromCSVread）
+    # subfamily info(fromCSVread)
     with open(DESC_51_FILE, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         rows_51 = list(reader)
     subfamilies = []
     for row in rows_51:
-        subfamilies.append("")  # descriptors file lackssubfamilycolumn，fromPFASname inference
+        subfamilies.append("")  # descriptors file lackssubfamilycolumn, fromPFASname inference
     
-    # for51PFASmanual subfamily annotation（based on known classification）
+    # for51PFASmanual subfamily annotation(based on known classification)
     subfam_map = {
         "6:2 FtSaB": "Zwitterionic", "8:2 FtSaB": "Zwitterionic", "10:2 FtSaB": "Zwitterionic",
         "PFOSB": "Zwitterionic", "PFOAAmS": "Cationic", "PFOAB": "Zwitterionic",
@@ -386,7 +386,7 @@ def main():
     X_11k, rows_11k = load_11k_descriptors(sample_rate=0.2)
     
     if X_11k is not None:
-        # align features：onlytake51and11Kshared features
+        # align features: onlytake51and11Kshared features
         with open(DESC_11K_FILE, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             feat_11k = reader.fieldnames
@@ -407,14 +407,14 @@ def main():
         
         # re-extract11Kcommon features
         X_11k_common = np.zeros((X_11k.shape[0], len(common_feats)))
-        # X_11kisnumpyarray but order may not match，userows_11kre-read
-        # actualload_11k_descriptorsalready taken all features，but row-sampled
+        # X_11kisnumpyarray but order may not match, userows_11kre-read
+        # actualload_11k_descriptorsalready taken all features, but row-sampled
         # needs re-extraction
         pass
     
-    # simplethis：only on51t-SNE，annotate on figurelog Kd
-    # for11Kdo separatelyt-SNEthen overlay bad，because dimensionality-reduced spaces differ
-    # usePCAproject：use51types of fittingPCA，11Kproject to same space
+    # simplethis: only on51t-SNE, annotate on figurelog Kd
+    # for11Kdo separatelyt-SNEthen overlay bad, because dimensionality-reduced spaces differ
+    # usePCAproject: use51types of fittingPCA, 11Kproject to same space
     
     # 4. t-SNEreduce (51)
     X_tsne = run_tsne(X_51_scaled, perplexity=8)  # small dataset uses smallerperplexity
@@ -464,7 +464,7 @@ def main():
         X_51_scaled_aligned = scaler.fit_transform(X_51_aligned)
         X_11k_scaled_aligned = scaler.transform(X_11k_aligned)
         
-        # PCAuse51types of fitting，project11K
+        # PCAuse51types of fitting, project11K
         pca = PCA(n_components=2, random_state=42)
         X_51_pca = pca.fit_transform(X_51_scaled_aligned)
         X_11k_pca = pca.transform(X_11k_scaled_aligned)

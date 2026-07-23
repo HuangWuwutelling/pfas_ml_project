@@ -5,11 +5,11 @@ S6_leave_one_out_validation.py
 leave-one-compound cross-validation (Leave-One-PFAS-Out Cross Validation)
 
 core question:
-  can model predict"never seen"PFASKd？
-  80/20split may overestimate performance（PFASmay appear in both train and test sets）。
+  can model predict"never seen"PFASKd? 
+  80/20split may overestimate performance(PFASmay appear in both train and test sets). 
 
 method:
-  loop47（1PFASdo one test set）:
+  loop47(1PFASdo one test set):
     training set: exceptPFASall data outside
     test set: PFASalldata
     eval: R², RMSE, RPD
@@ -147,7 +147,7 @@ def run_loo(rows, fieldnames, pfas_groups, feature_subset, model_label):
         X_train, y_train, _ = extract_data(train_rows, fieldnames, feature_subset)
         X_test, y_test, feat_names = extract_data(test_rows, fieldnames, feature_subset)
         
-        # feature alignment：ensuretestset features andtrainset completely consistent
+        # feature alignment: ensuretestset features andtrainset completely consistent
         # (extract_dataorder already guaranteed consistent)
         
         n_train = len(y_train)
@@ -195,7 +195,7 @@ def run_loo(rows, fieldnames, pfas_groups, feature_subset, model_label):
               f"n_test={n_test:<3} R²={r2:.3f} RMSE={rmse:.4f} RPD={rpd:.2f}")
         
         if r2 < -0.5:
-            print(f"           ⚠️  r²={r2:.2f} — PFASandotherPFASstructurebad")
+            print(f"           ⚠️  r²={r2:.2f} - PFASandotherPFASstructurebad")
     
     # summary statistics
     all_y_true = np.array(all_y_true)
@@ -259,7 +259,7 @@ def save_visualization(all_results_list, all_predictions_list, model_labels):
             ax.set_yticks(range(len(names)))
             ax.set_yticklabels(names, fontsize=7)
             ax.set_xlabel("R²")
-            ax.set_title(f"Leave-One-PFAS-Out R² — {label}")
+            ax.set_title(f"Leave-One-PFAS-Out R² - {label}")
             
             # label good/medium/bad
             good = sum(1 for v in r2_vals if v > 0.5)
@@ -284,7 +284,7 @@ def save_visualization(all_results_list, all_predictions_list, model_labels):
         plt.close()
         print(f"\n✅ fig: {figpath}")
         
-        # ===== fig2:  vs ptfig（all points merged） =====
+        # ===== fig2:  vs ptfig(all points merged) =====
         fig, axes = plt.subplots(1, n_models, figsize=(6 * n_models, 5))
         if n_models == 1:
             axes = [axes]
@@ -310,7 +310,7 @@ def save_visualization(all_results_list, all_predictions_list, model_labels):
         print(f"✅ fig: {figpath}")
         
     except ImportError:
-        print("  ⚠️ matplotlibnot installed，skip figures")
+        print("  ⚠️ matplotlibnot installed, skip figures")
     except Exception as e:
         print(f"  ⚠️ figure save failed: {e}")
 
@@ -357,7 +357,7 @@ def main():
     # visualization
     save_visualization(all_results, all_predictions, [m[1] for m in model_configs])
     
-    print(f"\n✅ S6 !")
+    print(f"\n✅ S6 complete!")
 
 
 if __name__ == "__main__":

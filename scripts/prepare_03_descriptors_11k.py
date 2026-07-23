@@ -2,25 +2,25 @@
 """
 06_calc_descriptors_full.py
 ============================
-use RDKit batch compute EPA PFASMASTER full list（~11,000）molecular descriptorsandfingerprint。
+use RDKit batch compute EPA PFASMASTER full list(~11,000)molecular descriptorsandfingerprint. 
 
 input: data/processed/pfas_clean.csv
-       （ EPA PFASMASTER list，10,972rows containingSMILES）
+       ( EPA PFASMASTER list, 10,972rows containingSMILES)
 output: data/processed/pfas_descriptors_full.csv
-       （217RDKitdescriptors + PFASspecific features）
+       (217RDKitdescriptors + PFASspecific features)
       data/processed/pfas_fingerprint_full.csv
-       （2048ECFP4Morgan fingerprint）
+       (2048ECFP4Morgan fingerprint)
 
-and02_calc_descriptors.py：
+and02_calc_descriptors.py: 
   - inputfromPubChemdatasetEPACleanlist
   - SMILESfrom pfas_clean.csv  SMILES column read
-  - containsSMILESformat cleanup（remove |lp:...| extension marker）
+  - containsSMILESformat cleanup(remove |lp:...| extension marker)
   - output filename + _full suffix
 
 row:
   python scripts/06_calc_descriptors_full.py
 
-estimated elapsed: 2-5min（11,000rows）
+estimated elapsed: 2-5min(11,000rows)
 """
 
 import csv
@@ -46,18 +46,18 @@ try:
     print("✅ RDKit installed")
 except ImportError:
     RDKIT_AVAILABLE = False
-    print("❌ RDKit not installed，please run: pip install rdkit-pypi")
+    print("❌ RDKit not installed, please run: pip install rdkit-pypi")
     print("   re-run this script after install")
 
 
 def clean_smiles(smiles):
-    """SMILES：remove |lp:...| extension markers and other non-standard formats"""
+    """SMILES: remove |lp:...| extension markers and other non-standard formats"""
     if not smiles or not isinstance(smiles, str):
         return None
     s = smiles.strip()
     if not s:
         return None
-    # remove |...| extension marker（RDKit）， |lp:4:2,6:3...|
+    # remove |...| extension marker(RDKit),  |lp:4:2,6:3...|
     pipe_pos = s.find("|")
     if pipe_pos != -1:
         s = s[:pipe_pos].strip()
@@ -86,7 +86,7 @@ def calc_fingerprint(mol, radius=2, nbits=2048):
 
 
 def calc_pfas_specific_features(mol):
-    """computePFASspecific features（atRDKitparsed mol object）"""
+    """computePFASspecific features(atRDKitparsed mol object)"""
     features = {
         "carbon_count": 0,       # atom count
         "fluorine_count": 0,     # F atom count
@@ -192,7 +192,7 @@ def main():
         # compute standard descriptors
         desc = calc_all_descriptors(mol)
 
-        # takeRDKitnormalizedSMILES（for cross-dataset key matching）
+        # takeRDKitnormalizedSMILES(for cross-dataset key matching)
         rdkit_smiles_norm = Chem.MolToSmiles(mol)
 
         # computePFASspecific features
@@ -218,7 +218,7 @@ def main():
     print(f"  parse failed: {skipped_parse_fail}")
 
     if not valid_idx:
-        print("  ❌ all failed，exit")
+        print("  ❌ all failed, exit")
         sys.exit(1)
 
     # determineoutputfield

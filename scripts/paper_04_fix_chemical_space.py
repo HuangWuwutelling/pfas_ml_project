@@ -1,6 +1,6 @@
 """
-fix chemical space figure: use jointt-SNEreduce (51 + 11Kjoint dimensionality reduction)。
-PCAis linear dimensionality reduction，。
+fix chemical space figure: use jointt-SNEreduce (51 + 11Kjoint dimensionality reduction). 
+PCAis linear dimensionality reduction, . 
 """
 
 import numpy as np
@@ -63,14 +63,14 @@ feat_11k_clean = [c for c in feat_11k if c not in {"DTXSID", "SMILES", "RDKIT_SM
 common = [f for f in feat_names if f in feat_11k_clean]
 print(f"Common features: {len(common)}/{n_feat}")
 
-# sample11Kto2000points（t-SNEruns too slow）
+# sample11Kto2000points(t-SNEruns too slow)
 import random
 random.seed(42)
 n_11k = len(rows_11k)
 sample_size = min(2000, n_11k)
 rows_11k_sample = random.sample(rows_11k, sample_size)
 
-# build11K（by common features）
+# build11K(by common features)
 X_11k = np.zeros((sample_size, len(common)))
 feat_idx_map = {f: i for i, f in enumerate(common)}
 for i, row in enumerate(rows_11k_sample):

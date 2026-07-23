@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 S6b_loo_combined_fix.py
-re-runCombinedmodel LOO validation，detailCSV
+re-runCombinedmodel LOO validation, detailCSV
 also confirm simplified model (MolWt + Corg + pH + CEC) R²
 """
 import csv, os, sys, numpy as np, warnings
@@ -168,7 +168,7 @@ for j in idx[:5]:
     r = all_results[j]
     print(f"    ⚠️ {r['test_pfas']:<18} R²={r['r2']:.3f} n={r['n_test']}")
 
-# saveLOOaggregate to kd_leave_one_out_summary.csv（S6oldresult）
+# saveLOOaggregate to kd_leave_one_out_summary.csv(S6oldresult)
 OUT_SUMMARY = os.path.join(SI_DIR, "kd_leave_one_out_summary.csv")
 n_positive = sum(combined_r2 > 0)
 n_total = len(combined_r2)
@@ -194,7 +194,7 @@ with open(OUT_SUMMARY, "w", newline="", encoding="utf-8") as f:
 print(f"  ✅ LOOsummary saved: {OUT_SUMMARY}")
 
 # ── Simplified model: all data MolWt + Corg + pH + CEC ──
-# (single seed=42 result，and SI Table S2 consistent)
+# (single seed=42 result, and SI Table S2 consistent)
 print("\n\n=== Simplified model: MolWt + Corg + pH + CEC ===\n")
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import r2_score, mean_squared_error
@@ -232,7 +232,7 @@ model_full = xgb.XGBRegressor(n_estimators=500, max_depth=8, learning_rate=0.05,
 cv_full = cross_val_score(model_full, X_all, y_all, cv=5, scoring='r2')
 print(f"\n  full model 5-fold CV: mean={cv_full.mean():.4f} ± {cv_full.std():.4f}")
 
-# append simplified model results to kd_simplified_results.csv（auxiliary record）
+# append simplified model results to kd_simplified_results.csv(auxiliary record)
 SIMPLIFIED_OUT = os.path.join(SI_DIR, "kd_simplified_results.csv")
 if os.path.exists(SIMPLIFIED_OUT):
     with open(SIMPLIFIED_OUT, "a", newline="", encoding="utf-8") as f:

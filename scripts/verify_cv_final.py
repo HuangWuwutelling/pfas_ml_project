@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CVtake mean，eliminate split randomness"""
+"""CVtake mean, eliminate split randomness"""
 import csv, os, numpy as np, warnings
 warnings.filterwarnings("ignore")
 

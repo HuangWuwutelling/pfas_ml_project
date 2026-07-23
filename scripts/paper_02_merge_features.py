@@ -2,7 +2,7 @@
 """
 S2_merge_features.py
 ====================
-SIdata：S1RDKitdescriptors + Final_datasoil properties + Kd → training feature matrix。
+SIdata: S1RDKitdescriptors + Final_datasoil properties + Kd → training feature matrix. 
 
 input:
   data/paper/descriptors_51pfas.csv   (51PFASRDKitdescriptors)
@@ -13,7 +13,7 @@ output:
 
 description:
   matching method: PFAS (PFAS abbreviationcolumn) → PFAS_name
-  keep only log Kd rows with non-empty values and complete soil features。
+  keep only log Kd rows with non-empty values and complete soil features. 
   target: log Kd (SI Excelcolumn58)
 """
 
@@ -28,8 +28,8 @@ FINAL_FILE = os.path.join(SI_DIR, "Final_data.csv")
 OUTPUT_FILE = os.path.join(SI_DIR, "feature_matrix_kd.csv")
 INFO_FILE = os.path.join(SI_DIR, "feature_matrix_kd_info.txt")
 
-# soil/experimental feature columns（Final_dataselected from）
-# column name mapping（fromFinal_data.csvauto-fetch from header row）
+# soil/experimental feature columns(Final_dataselected from)
+# column name mapping(fromFinal_data.csvauto-fetch from header row)
 SOIL_FEATURE_MAP = {
     "Corg_%": "Corg (%)",
     "foc": "foc",
@@ -122,7 +122,7 @@ def main():
         kd = safe_float(row.get(KD_NAME))
         log_koc = safe_float(row.get(TARGET_ALT_NAME))
 
-        # soil features（access via column name）
+        # soil features(access via column name)
         soil_vals = {}
         for feat_name, col_name in SOIL_FEATURE_MAP.items():
             v = safe_float(row.get(col_name))
@@ -202,7 +202,7 @@ def main():
         f.write("\n".join(info_lines))
     print(f"\n  statisticsinfo: {INFO_FILE}")
 
-    # 5. outputCSV（remove_n_soil_missinginternal columns）
+    # 5. outputCSV(remove_n_soil_missinginternal columns)
     out_fieldnames = [
         "PFAS_name", "log_Kd", "Kd_L_kg", "log_Koc",
     ] + list(SOIL_FEATURE_MAP.keys()) + desc_fieldnames
@@ -214,7 +214,7 @@ def main():
     
     print(f"  feature matrix: {OUTPUT_FILE}")
     print(f"  {len(merged)} row × {len(out_fieldnames)} column")
-    print(f"\n✅ S2 ！")
+    print(f"\n✅ S2 ! ")
 
 
 if __name__ == "__main__":

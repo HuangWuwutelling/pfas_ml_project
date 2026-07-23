@@ -2,7 +2,7 @@
 """
 generate_figures.py
 ===================
-generate all figures for the revised paper Figure and Table。
+generate all figures for the revised paper Figure and Table. 
 
 Figure 1: Predicted vs. observed log Kd (Combined model, test set)
 Figure 2: Model performance comparison bar chart (R² and RPD)
@@ -203,7 +203,7 @@ def fig2_model_comparison():
         "Model B: Soil only", 
         "Model C: Combined",
         "Top 5 SHAP (molecular descriptors)",
-        "onlyCorg + pH + CEC",
+        "Corg + pH + CEC only",
     ]
     
     filtered = [r for r in results if r["model"] in key_models]
@@ -213,7 +213,7 @@ def fig2_model_comparison():
         "Model B: Soil only": "Soil only (9 feat.)",
         "Model C: Combined": "Combined (145 feat.)",
         "Top 5 SHAP (molecular descriptors)": "Top 2 MolWt feat.",
-        "onlyCorg + pH + CEC": "Corg+pH+CEC",
+        "Corg + pH + CEC only": "Corg+pH+CEC",
     }
     
     labels = [name_map.get(r["model"], r["model"]) for r in filtered]
@@ -412,7 +412,7 @@ def fig5_chemical_space():
     dst = os.path.join(FIG_DIR, "fig5_chemical_space.png")
     if os.path.exists(src):
         shutil.copy2(src, dst)
-        print(f"  ✅ Fig 5: {dst} (copied from S4 output)")
+        print(f"  ✅ Fig 5: {dst} (copied from paper_04 output)")
     else:
         print(f"  ⚠️ Fig 5: source not found at {src}")
 
@@ -452,14 +452,14 @@ def table1_model_performance():
             rmse = r["rmse"]
             rpd = r["rpd"]
             cv_r2 = r.get("cv_r2", "")
-            # Find LOO_R² — only meaningful for descriptor-only and full-combined models
+            # Find LOO_R² - only meaningful for descriptor-only and full-combined models
             loo_r2 = ""
             # new format: onlyhas1row "RDKit + soil properties" → Combined model LOO
             # old format: 2row "RDKit descriptors only" + "RDKit + soil properties"
             if len(loo_summary) == 1:
                 # onlyhascombined LOOrow
                 loo_row = loo_summary[0]
-                if "soil" in model.lower() or "allfeature" in model.lower():
+                if "soil" in model.lower() or "all features" in model.lower():
                     loo_r2 = loo_row["overall_r2"]
             else:
                 # old format compat: 2row model type
@@ -468,7 +468,7 @@ def table1_model_performance():
                     ml = model.lower()
                     if "rdkit" in sm and "only" in sm and ("top" in ml or "descriptors" in ml or "remove soil" in ml):
                         loo_r2 = s["overall_r2"]
-                    elif "soil" in sm and "allfeature" in ml:
+                    elif "soil" in sm and "all features" in ml:
                         loo_r2 = s["overall_r2"]
             writer.writerow([model, nf, r2, rmse, rpd, cv_r2, loo_r2])
     
@@ -597,7 +597,7 @@ def figS3_shap_bar(rows):
     ax.set_yticklabels(top_names, fontsize=9)
     ax.invert_yaxis()
     ax.set_xlabel("Mean |SHAP| (impact on model output)", fontsize=10)
-    ax.set_title("Figure S3. SHAP Feature Importance — Combined Model", fontsize=11)
+    ax.set_title("Figure S3. SHAP Feature Importance - Combined Model", fontsize=11)
     plt.tight_layout()
     path = os.path.join(FIG_DIR, "figS3_shap_bar_kd.png")
     plt.savefig(path, dpi=200, bbox_inches="tight")
