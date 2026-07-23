@@ -1,0 +1,9 @@
+subfamily,n,molwt_vs_logkd_r,molwt_vs_logkd_p,carbon_vs_logkd_r,fluorine_vs_logkd_r
+PFCA,12,0.925,1.65e-05,0.925,0.925
+PFSA,8,0.929,8.60e-04,0.889,0.938
+Zwitterionic,5,0.834,7.91e-02,0.649,0.792
+FTOH,4,0.998,2.50e-03,0.998,0.998
+FOSA,4,0.933,6.72e-02,0.984,0.888
+Cationic,3,0.954,1.95e-01,0.991,0.98
+FTS,3,1.0,7.66e-03,1.0,1.0
+PFPA,3,0.951,2.01e-01,0.951,0.951

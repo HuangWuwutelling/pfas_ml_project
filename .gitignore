@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.venv_py311/
+
+# Hermes Agent
+.hermes/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Manuscript drafts (active editing, kept locally only — NOT pushed to GitHub)
+manuscript/
+
+# Private downloads (not part of paper data)
+data/source/Key properties governing sorption–desorption behaviour of poly- and perfluoroalkyl substances in saturated and unsaturated soils.pdf
+data/source/Key properties governing sorption–desorption behaviour of poly- and perfluoroalkyl substances in saturated and unsaturated soils.pdf:Zone.Identifier
+wosis_pH_review/
+_private/
+reference_repos/
+
+# Internal design / audit notes (not part of the public release)
+UPLOAD_PACKAGE_DESIGN.md
+FILE_AUDIT_REPORT.md
+requirements.txt.bak
+
+# Work-in-progress notes (read-paper artefacts; manuscript/ holds the real drafts)
+/paper/
+
+# Archived scripts (superseded by paper_*.py; kept locally for history only)
+scripts/_archive/
+
+# Test run output (not for public release — local validation only)
+_test_run_*/
+_test_run_2026_07_03/
+
+# Regenerable processed intermediates (re-derived by paper_00 → paper_02)
+data/processed/
+
+# Large SI PDF not read by any script (download from DOI: 10.1021/acs.est.4c13284)
+data/source/es4c13284_si_001.pdf
+
+# Regenerable PubChem intermediates (can be re-pulled via PubChem API)
+data/raw/cid_cache.json
+data/raw/pfas_properties_bulk.csv
+data/raw/pfas_properties.csv
+
+# Temp
+/tmp/
+*.tmp

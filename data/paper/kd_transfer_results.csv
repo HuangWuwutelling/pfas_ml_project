@@ -1,0 +1,4 @@
+model,n_features,r2,rmse,rpd,cv_r2,cv_std
+Top 2 SHAP (MolWt+ExactMolWt) + soil,11,0.8623,0.3429,2.69,0.4638,0.1403
+Transfer (AE 64D latent + soil),73,0.854,0.3531,2.62,0.3525,0.3029
+PCA (64D) + soil,73,0.86,0.3457,2.67,0.5537,0.0986

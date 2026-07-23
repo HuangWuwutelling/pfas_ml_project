@@ -1,0 +1,26 @@
+Total rows in Final_data: 1849
+
+Matched (have RDKit desc + log Kd): 1227
+  Skipped: no RDKit desc: 0
+  Skipped: no log Kd target: 0
+
+
+Soil feature completeness (out of 1227 matched rows):
+  Corg_%: 1227/1227 present (100.0%)
+  foc: 1227/1227 present (100.0%)
+  pH: 1227/1227 present (100.0%)
+  Sand: 1227/1227 present (100.0%)
+  Silt: 1227/1227 present (100.0%)
+  Clay: 1227/1227 present (100.0%)
+  CEC: 1227/1227 present (100.0%)
+  Fe_g_kg: 583/1227 present (47.5%)
+  Al_g_kg: 576/1227 present (46.9%)
+
+Rows with ALL soil features: 576/1227
+
+log Kd distribution:
+  n=1227
+  mean=0.77
+  median=0.78
+  range=[-1.40, 3.95]
+  std=0.92
