@@ -8,7 +8,7 @@ from matplotlib.patches import FancyBboxPatch
 import numpy as np
 import os
 
-FIG_DIR = os.path.expanduser("~/pfas_ml_project/paper/figures")
+FIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "paper")
 os.makedirs(FIG_DIR, exist_ok=True)
 
 plt.rcParams.update({

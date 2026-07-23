@@ -27,7 +27,7 @@ warnings.filterwarnings("ignore")
 # ── Paths ──────────────────────────────────────────────
 PROJECT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SI_DIR = os.path.join(PROJECT, "data", "paper")
-FIG_DIR = os.path.join(PROJECT, "paper", "figures")
+FIG_DIR = os.path.join(PROJECT, "data", "paper")
 TBL_DIR = os.path.join(PROJECT, "paper", "tables")
 os.makedirs(FIG_DIR, exist_ok=True)
 os.makedirs(TBL_DIR, exist_ok=True)
@@ -424,7 +424,7 @@ def fig5_chemical_space():
 def fig6_clusters():
     import shutil
     # The existing t-SNE cluster figure
-    src = os.path.join(FIG_DIR, "cluster_t-sne.png")
+    src = os.path.join(FIG_DIR, "kd_cluster_tsne.png")
     dst = os.path.join(FIG_DIR, "fig6_cluster_tsne.png")
     if os.path.exists(src):
         shutil.copy2(src, dst)

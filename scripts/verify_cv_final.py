@@ -3,7 +3,7 @@
 import csv, os, numpy as np, warnings
 warnings.filterwarnings("ignore")
 
-SI_DIR = "/home/zaoquan/pfas_ml_project/data/paper"
+SI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "paper")
 INPUT = os.path.join(SI_DIR, "feature_matrix_kd.csv")
 
 with open(INPUT, encoding="utf-8") as f:

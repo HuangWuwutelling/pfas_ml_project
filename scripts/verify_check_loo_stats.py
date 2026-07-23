@@ -1,7 +1,9 @@
 import csv, numpy as np
 
 # Combined LOO
-with open("/home/zaoquan/pfas_ml_project/data/paper/kd_leave_one_out_results_combined.csv") as f:
+import os
+CSV_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "paper")
+with open(os.path.join(CSV_DIR, "kd_leave_one_out_results_combined.csv")) as f:
     rows = list(csv.DictReader(f))
 
 r2 = np.array([float(r["r2"]) for r in rows])

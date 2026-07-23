@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 SI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "paper")
 DESC_51_FILE = os.path.join(SI_DIR, "descriptors_51pfas.csv")
 FEATURE_FILE = os.path.join(SI_DIR, "feature_matrix_kd.csv")
-DESC_11K_FILE = "/home/zaoquan/pfas_ml_project/data/processed/pfas_descriptors_full.csv"
+DESC_11K_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "processed", "pfas_descriptors_full.csv")
 
 # 1. 加载51种PFAS
 with open(DESC_51_FILE, "r") as f:

@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import csv, os, sys
 
-PROJECT = os.path.expanduser("~/pfas_ml_project")
+PROJECT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATA_DIR = os.path.join(PROJECT, "data", "paper")
 FIG_DIR = os.path.join(PROJECT, "paper", "figures")
 os.makedirs(FIG_DIR, exist_ok=True)
@@ -96,7 +96,7 @@ from collections import defaultdict
 from sklearn.metrics import r2_score
 
 FEATURE_FILE = os.path.join(DATA_DIR, "feature_matrix_kd.csv")
-PFAS_PROP = os.path.join(DATA_DIR, "..", "..", "data_SI", "PFAS_Properties.csv")
+PFAS_PROP = os.path.join(PROJECT, "data", "paper", "PFAS_Properties.csv")
 
 # Load feature matrix
 with open(FEATURE_FILE) as f:

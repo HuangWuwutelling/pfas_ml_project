@@ -9,7 +9,7 @@ S1_calc_descriptors_51pfas.py
 |      (51行: PFAS名 + Smiles + RDKIT_SMILES + 225个RDKit描述符 + PFAS特有特征)
 |
 |运行:
-|  cd ~/pfas_ml_project
+|  cd <project_root>
 |  .venv_py311/bin/python scripts/paper_01_calc_descriptors.py
 """
 
