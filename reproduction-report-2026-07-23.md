@@ -1,3 +1,16 @@
+# Internal Reproduction Audit Report (2026-07-23)
+
+> **NOTE TO REVIEWERS**: This file is an *internal* audit log documenting a
+> third-party reproduction of the pipeline on a Windows 11 environment.
+> It is **not** part of the paper text and is **not** required for
+> reproducing the published results. It is included in this repository
+> as evidence of cross-platform reproducibility. The full English
+> reproduction guide is in `docs/REPRODUCE.md`.
+>
+> **Original Chinese text follows.**
+
+---
+
 # PFAS ML Pipeline 复现报告
 
 > **日期**: 2026-07-23  

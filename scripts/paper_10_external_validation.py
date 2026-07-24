@@ -80,9 +80,59 @@ def get_mw(smiles):
 def load_xie2024(smi_map):
     """Return DataFrame with: PFAS, MW_paper (RDKit), pH, OC, CEC, Sand, Silt, Clay,
     log_Kd (paper base 10). Convert from Xie's log₂ to log₁₀.
+
+    NOTE on data access: The Xie et al. (2024) SI is published by Elsevier
+    (Sci. Total Environ.) and is NOT publicly redistributable. To re-run
+    this validation, download the SI from
+    https://doi.org/10.1016/j.scitotenv.2024.176575 and extract Table S5
+    to CSV. The expected columns are:
+        PFAS, LogKd (Base 2, L/kg), pH, OC (%), CEC (cmol+/kg),
+        Sand (%), Silt (%), Clay (%), MW (g/mol), LogP, LogS, ATSm8, SpDiam
+
+    This function auto-extracts from
+    data/source/Elucidating per- and polyfluoroalkyl2024-SI.docx
+    (if present locally), or reads from /tmp/xie2024_table5.csv (if pre-extracted).
     """
+    import os
+
     rows = []
-    with open('/tmp/xie2024_table5.csv') as f:
+    csv_path = None
+
+    # Try pre-extracted CSV first
+    if os.path.exists('/tmp/xie2024_table5.csv'):
+        csv_path = '/tmp/xie2024_table5.csv'
+    else:
+        # Try auto-extract from the SI docx
+        si_docx = (BASE + 'data/source/Elucidating per- and polyfluoroalkyl2024-SI.docx')
+        if os.path.exists(si_docx):
+            try:
+                import docx
+                doc = docx.Document(si_docx)
+                for tbl in doc.tables:
+                    if len(tbl.rows) > 0:
+                        first = [c.text.strip() for c in tbl.rows[0].cells]
+                        if 'PFAS' in first and 'LogKd' in first:
+                            with open('/tmp/xie2024_table5.csv', 'w', newline='') as f:
+                                w = csv.writer(f)
+                                for row in tbl.rows:
+                                    w.writerow([c.text.strip() for c in row.cells])
+                            csv_path = '/tmp/xie2024_table5.csv'
+                            print(f"  Auto-extracted {len(tbl.rows)} rows from Xie SI to /tmp/xie2024_table5.csv")
+                            break
+            except Exception as e:
+                print(f"  Could not auto-extract from SI: {e}")
+
+    if csv_path is None:
+        print("\n*** Xie 2024 SI not found locally. ***")
+        print("    To run Xie external validation, either:")
+        print("    1) Download from https://doi.org/10.1016/j.scitotenv.2024.176575")
+        print("       and save to data/source/Elucidating per- and polyfluoroalkyl2024-SI.docx")
+        print("    2) Or pre-extract Table S5 to /tmp/xie2024_table5.csv with columns:")
+        print("       PFAS, LogKd, pH, OC, CEC, Sand, Silt, Clay, MW, LogP, LogS, ATSm8, SpDiam")
+        print("    Then re-run this script. Skipping Xie external validation for now.\n")
+        return pd.DataFrame()
+
+    with open(csv_path) as f:
         reader = csv.DictReader(f)
         for row in reader:
             pfas = row['PFAS'].strip()
