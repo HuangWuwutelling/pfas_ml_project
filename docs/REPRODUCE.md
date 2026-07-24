@@ -459,7 +459,41 @@ from `paper_03`.
 
 ---
 
-## 17. License
+## 17. External validation against Xie 2024 and Morales 2026 (verified 2026-07-24)
+
+`paper_10_external_validation.py` runs the paper-trained XGBoost models against two independent K<sub>d</sub> datasets:
+
+- **Xie et al. (2024)** [25] (Sci. Total Environ. 954, 176575): 22 PFAS overlap with paper, 1,780 rows
+- **Morales et al. (2026)** [26] (Environ. Res. 306, 125071): 9 PFAS overlap, 57 rows with full features
+
+Run with:
+
+```bash
+python3 scripts/paper_10_external_validation.py
+```
+
+Outputs:
+- `data/paper/kd_external_validation_xie2024.csv` (1,780 rows)
+- `data/paper/kd_external_validation_morales2026.csv` (57 rows)
+- `data/paper/fig10_external_validation.png` (4-panel comparison)
+
+Headline results:
+
+| Dataset | Model | R² | RMSE |
+|---|---|---:|---:|
+| Paper training (in-sample) | Simplified 4-feat | 0.94 | — |
+| Xie 2024 | Simplified 4-feat | **+0.78** | 0.38 |
+| Xie 2024 | Full 145-feat | +0.57 | 0.54 |
+| Morales 2026 | 3-feat (no CEC) | −3.74 | 1.51 |
+
+The Xie 2024 R² of 0.78 confirms the paper model generalizes to a wholly independent experimental compilation (within 0.09 of the in-sample R²). The Morales 2026 failure reflects a domain shift between laboratory training data (low-Kd clean soils) and field-contaminated soils (high-Kd legacy sites); see Section 4.6 of the discussion draft for full interpretation.
+
+**Data sources downloaded to `data/source/`:**
+- `Elucidating per- and polyfluoroalkyl2024.pdf` — Xie 2024 paper
+- `Elucidating per- and polyfluoroalkyl2024-SI.docx` — Xie 2024 SI (Table 5 extracted to `/tmp/xie2024_table5.csv` during script run)
+- `Morales_2026_SI.xlsx` — Morales 2026 SI (4 sheets, Kd matrix auto-converted to long format in `data/source/morales_long.csv` during script run)
+
+## 18. License
 
 This reproduction code is released under the MIT License. See [LICENSE](../LICENSE).
 

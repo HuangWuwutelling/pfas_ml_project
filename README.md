@@ -38,6 +38,8 @@ leakage fix (sklearn.Pipeline in `paper_03`), and LOO pooled R² canonicalizatio
 | Soil properties only (9 features) | 0.245 | 1.15 | — |
 | **Combined (RDKit + soil, ~146 features)** | **0.870** | **2.78** | **0.730** |
 | Simplified (MolWt + Corg + pH + CEC, 4 features) | 0.837 | 2.48 | 0.592 (nested) |
+| **External validation — Xie 2024** (1,780 rows × 22 PFAS) | **+0.78** | — | — |
+| External validation — Morales 2026 (57 rows × 9 PFAS) | −3.74 | — | — |
 
 A simplified 4-feature model recovers 96% of the full-model accuracy, demonstrating
 extensive redundancy in RDKit descriptors for the PFAS chemical space.
