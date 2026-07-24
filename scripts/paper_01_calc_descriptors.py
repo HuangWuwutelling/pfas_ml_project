@@ -2,11 +2,11 @@
 """
 S1_calc_descriptors_51pfas.py
 |==============================
-|[core] compute51PFASRDKitmolecular descriptors(for§2.2)
+|[core] compute 51PFASRDKitmolecular descriptors(for§2.2)
 |
 |input: data/paper/PFAS_Properties.csv (51PFAS, Smilescolumn)
 |output: data/paper/descriptors_51pfas.csv
-|      (51row: PFAS + Smiles + RDKIT_SMILES + 225RDKitdescriptors + PFASspecific features)
+|      (51 rows: PFAS + Smiles + RDKIT_SMILES + 225RDKitdescriptors + PFASspecific features)
 |
 |row:
 |  cd <project_root>
@@ -56,7 +56,7 @@ def clean_smiles(smiles):
 
 
 def calc_all_descriptors(mol):
-    """compute200+standardRDKitmolecular descriptors"""
+    """compute 200+standardRDKitmolecular descriptors"""
     if mol is None:
         return {}
     desc_names = [d[0] for d in Descriptors._descList]
@@ -197,7 +197,7 @@ def main():
     # statistics
     elapsed = time.time() - start_time
     print(f"\n  ✅ success: {succeeded}/{len(rows)}")
-    print(f"  ❌ emptySMILES: {len(failed_smiles)} - {failed_smiles}")
+    print(f"  ❌ empty SMILES: {len(failed_smiles)} - {failed_smiles}")
     print(f"  ❌ parse failed: {len(failed_parse)} - {failed_parse}")
     print(f"  total elapsed: {elapsed:.1f} s")
 
@@ -218,7 +218,7 @@ def main():
 
     print(f"\n  output: {OUTPUT_FILE}")
     print(f"  {len(results)} row × {len(fieldnames)} column")
-    print(f"\n✅ S1 ! ")
+    print(f"\n✅ S1 complete! ")
 
 
 if __name__ == "__main__":

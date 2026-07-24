@@ -41,7 +41,7 @@ import xgboost as xgb
 
 X_all, y_all = extract(rows, all_desc)
 
-# 5differentrandom_state5-fold CV
+# 5 different random_state5-fold CV
 results = []
 for seed in [42, 123, 456, 789, 1111]:
     model = xgb.XGBRegressor(n_estimators=500, max_depth=8, learning_rate=0.05,

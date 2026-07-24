@@ -6,9 +6,9 @@ SIdata: S1RDKitdescriptors + Final_datasoil properties + Kd → training feature
 
 input:
   data/paper/descriptors_51pfas.csv   (51PFASRDKitdescriptors)
-  data/paper/Final_data.csv           (1849experimental data rows)
+  data/paper/Final_data.csv           (1849 experimental data rows)
 output:
-  data/paper/feature_matrix_kd.csv    (1227row × ~250column: feature + target)
+  data/paper/feature_matrix_kd.csv    (1227 rows × ~250 columns: feature + target)
   data/paper/feature_matrix_kd_info.txt  (datastatistics)
 
 description:
@@ -214,7 +214,7 @@ def main():
     
     print(f"  feature matrix: {OUTPUT_FILE}")
     print(f"  {len(merged)} row × {len(out_fieldnames)} column")
-    print(f"\n✅ S2 ! ")
+    print(f"\n✅ S2 complete! ")
 
 
 if __name__ == "__main__":

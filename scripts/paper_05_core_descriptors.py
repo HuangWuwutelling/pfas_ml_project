@@ -4,7 +4,7 @@ S5_core_descriptors_analysis.py
 ================================
 core descriptor filter + relationship analysis
 
-Part 1: fromSHAP Top 20select core descriptors, build simplified model
+Part 1: fromSHAP Top 20 select core descriptors, build simplified model
 Part 2: MolWt/ vs Kdrelationship analysis, interpret cluster results
 
 input: data/paper/feature_matrix_kd.csv
@@ -37,7 +37,7 @@ def load_data():
         all_rows = list(reader)
     fieldnames = reader.fieldnames
     
-    # loadedSHAPsort result
+    # loadedSHAP sort result
     shap_ranking = []
     if os.path.exists(SHAP_FILE):
         with open(SHAP_FILE, "r", encoding="utf-8") as f:
@@ -47,9 +47,9 @@ def load_data():
         shap_ranking.sort(key=lambda x: -x[1])
     
     print(f"  data: {len(all_rows)} row × {len(fieldnames)} column")
-    print(f"  SHAPsort: {len(shap_ranking)} features")
+    print(f"  SHAP sort: {len(shap_ranking)} features")
     show_top = [f"{f}: {v:.4f}" for f, v in shap_ranking[:15]]
-    print(f"  Top 15 SHAPfeature: {', '.join(show_top)}")
+    print(f"  Top 15 SHAP feature: {', '.join(show_top)}")
     
     return all_rows, fieldnames, shap_ranking
 
@@ -203,7 +203,7 @@ def train_xgb(X, y, feature_names, model_label):
 def run_simplified_models(rows, fieldnames, shap_ranking):
     """run multiple simplified model variants"""
     print("\n" + "=" * 60)
-    print("  Part 1: core descriptor filter - Simplified modelfor")
+    print("  Part 1: core descriptor filter + simplified model comparison")
     print("=" * 60)
     
     model_configs = [
@@ -267,7 +267,7 @@ def analyze_structure_kd_relationship(rows, fieldnames):
         pfas_count[name] = pfas_count.get(name, 0) + 1
     pfas_mean = {n: pfas_logkd[n] / pfas_count[n] for n in pfas_logkd}
     
-    # from the1row extractMolWt(all rows identical, because samePFASmolecular descriptorssame)
+    # from the 1row extractMolWt(all rows identical, because samePFASmolecular descriptorssame)
     pfas_molwt = {}
     pfas_carbon = {}
     pfas_fluorine = {}
@@ -354,9 +354,9 @@ def analyze_structure_kd_relationship(rows, fieldnames):
             writer = csv.DictWriter(f, fieldnames=correlation_results[0].keys())
             writer.writeheader()
             writer.writerows(correlation_results)
-        print(f"\n✅ structurecorrelation: {corr_path}")
+        print(f"\n✅ structure correlation: {corr_path}")
     
-    # setstatistics(fromLevel 2verifyfile)
+    # setstatistics(fromLevel 2 verify file)
     print(f"\n  key findings:")
     print(f"  PFCA 12 homologs: MolWt vs log Kd correlation")
     for items in [subfam_groups.get("PFCA", [])]:

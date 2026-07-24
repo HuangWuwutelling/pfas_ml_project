@@ -5,13 +5,13 @@
 use RDKit batch compute EPA PFASMASTER full list(~11,000)molecular descriptorsandfingerprint. 
 
 input: data/processed/pfas_clean.csv
-       ( EPA PFASMASTER list, 10,972rows containingSMILES)
+       ( EPA PFASMASTER list, 10,972 rows containingSMILES)
 output: data/processed/pfas_descriptors_full.csv
        (217RDKitdescriptors + PFASspecific features)
       data/processed/pfas_fingerprint_full.csv
        (2048ECFP4Morgan fingerprint)
 
-and02_calc_descriptors.py: 
+and 0.2_calc_descriptors.py: 
   - inputfromPubChemdatasetEPACleanlist
   - SMILESfrom pfas_clean.csv  SMILES column read
   - containsSMILESformat cleanup(remove |lp:...| extension marker)
@@ -20,7 +20,7 @@ and02_calc_descriptors.py:
 row:
   python scripts/06_calc_descriptors_full.py
 
-estimated elapsed: 2-5min(11,000rows)
+estimated elapsed: 2-5 min(11,000 rows)
 """
 
 import csv
@@ -67,7 +67,7 @@ def clean_smiles(smiles):
 
 
 def calc_all_descriptors(mol):
-    """compute200+standardRDKitmolecular descriptors"""
+    """compute 200+standardRDKitmolecular descriptors"""
     if mol is None:
         return {}
     desc_names = [d[0] for d in Descriptors._descList]
@@ -141,7 +141,7 @@ def main():
 
     print("=" * 60)
     print("  EPA PFASMASTER full descriptor computation")
-    print("  input: pfas_clean.csv (10,972rows)")
+    print("  input: pfas_clean.csv (10,972 rows)")
     print("=" * 60)
 
     # read cleanedPFASlist
@@ -174,7 +174,7 @@ def main():
         # SMILES
         smiles = clean_smiles(raw_smiles)
         if smiles is None:
-            print(f"  [{i+1}/{len(rows)}] {dtxsid} ❌ emptySMILES")
+            print(f"  [{i+1}/{len(rows)}] {dtxsid} ❌ empty SMILES")
             results_desc.append(None)
             results_fp.append(None)
             skipped_no_smiles += 1
@@ -214,7 +214,7 @@ def main():
     # statistics
     valid_idx = [i for i, d in enumerate(results_desc) if d is not None]
     print(f"\n  success: {len(valid_idx):,}")
-    print(f"  emptySMILES: {skipped_no_smiles}")
+    print(f"  empty SMILES: {skipped_no_smiles}")
     print(f"  parse failed: {skipped_parse_fail}")
 
     if not valid_idx:
@@ -255,8 +255,8 @@ def main():
     print(f"  fingerprint: {OUTPUT_FP}")
     print(f"     {len(valid_idx):,} row × 2048 column")
 
-    # PFASfeature statistics
-    print(f"\n  PFASfeature statistics:")
+    # PFAS feature statistics
+    print(f"\n  PFAS feature statistics:")
     for feat_name in pfas_feature_names:
         vals = [results_desc[i]["desc"][feat_name] for i in valid_idx
                 if feat_name in results_desc[i]["desc"] and results_desc[i]["desc"][feat_name] is not None]
@@ -270,10 +270,10 @@ def main():
                     # numeric features
                     print(f"    {feat_name}: min={min(vals):.2f}, max={max(vals):.2f}, mean={np.mean(vals):.2f}")
 
-    # SMILESparse rate
+    # SMILES parse rate
     total_valid = len(rows) - skipped_no_smiles
     parse_rate = len(valid_idx) / max(total_valid, 1) * 100
-    print(f"\n  SMILESparse rate: {len(valid_idx)}/{total_valid} = {parse_rate:.1f}%")
+    print(f"\n  SMILES parse rate: {len(valid_idx)}/{total_valid} = {parse_rate:.1f}%")
 
 
 if __name__ == "__main__":

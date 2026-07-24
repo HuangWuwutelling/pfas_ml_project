@@ -146,7 +146,7 @@ overall_r2 = r2_score(combined_y_true, combined_y_pred)
 print(f"\n=== Combined LOO summary ===")
 print(f"  Overall R² (pooled) = {overall_r2:.4f}")
 print(f"  R² = {np.mean(combined_r2):.4f}")
-print(f"  medianR² = {np.median(combined_r2):.4f}")
+print(f"  median R² = {np.median(combined_r2):.4f}")
 print(f"  R²: {sum(combined_r2 > 0)}/{len(combined_r2)}")
 
 # n≥10 vs n<10
@@ -161,9 +161,9 @@ med = sum((combined_r2 > 0) & (combined_r2 <= 0.5))
 poor = sum(combined_r2 <= 0)
 print(f"  distribution: good(>0.5)={good} medium(0~0.5)={med} bad(<=0)={poor}")
 
-# worst5
+# worst 5
 idx = np.argsort(combined_r2)
-print(f"\n  bad5:")
+print(f"\n  bad 5:")
 for j in idx[:5]:
     r = all_results[j]
     print(f"    ⚠️ {r['test_pfas']:<18} R²={r['r2']:.3f} n={r['n_test']}")

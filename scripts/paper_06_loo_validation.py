@@ -6,10 +6,10 @@ leave-one-compound cross-validation (Leave-One-PFAS-Out Cross Validation)
 
 core question:
   can model predict"never seen"PFASKd? 
-  80/20split may overestimate performance(PFASmay appear in both train and test sets). 
+  80/20 split may overestimate performance(PFASmay appear in both train and test sets). 
 
 method:
-  loop47(1PFASdo one test set):
+  loop 47(1PFASdo one test set):
     training set: exceptPFASall data outside
     test set: PFASalldata
     eval: R², RMSE, RPD
@@ -195,7 +195,7 @@ def run_loo(rows, fieldnames, pfas_groups, feature_subset, model_label):
               f"n_test={n_test:<3} R²={r2:.3f} RMSE={rmse:.4f} RPD={rpd:.2f}")
         
         if r2 < -0.5:
-            print(f"           ⚠️  r²={r2:.2f} - PFASandotherPFASstructurebad")
+            print(f"           ⚠️  r²={r2:.2f} - PFAS structure differs from other PFAS in dataset")
     
     # summary statistics
     all_y_true = np.array(all_y_true)
@@ -226,8 +226,8 @@ def run_loo(rows, fieldnames, pfas_groups, feature_subset, model_label):
     
     print(f"\n  📊 summary ({model_label}):")
     print(f"     Overall R² = {overall_r2:.4f} (all points merged)")
-    print(f"     mean perPFAS R² = {avg_r2:.4f} ± {std_r2:.4f}")
-    print(f"    medianR² = {median_r2:.4f}")
+    print(f"     mean per-PFAS R² = {avg_r2:.4f} ± {std_r2:.4f}")
+    print(f"    median R² = {median_r2:.4f}")
     print(f"    R²: {n_positive}/{n_total}")
     
     return results, summary, (all_y_true, all_y_pred)
@@ -339,13 +339,13 @@ def main():
         all_summaries.append(summary)
         all_predictions.append(predictions)
         
-        # save eachPFASdetailresult
+        # save eachPFASdetailed result
         out_res = OUTPUT_RESULTS.replace(".csv", f"_{model_label.split()[0].lower()}.csv")
         with open(out_res, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=results[0].keys())
             writer.writeheader()
             writer.writerows(results)
-        print(f"  ✅ detailresult: {out_res}")
+        print(f"  ✅ detailed result: {out_res}")
     
     # save summary
     with open(OUTPUT_SUMMARY, "w", newline="", encoding="utf-8") as f:

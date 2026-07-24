@@ -4,8 +4,8 @@ S1.5_clean_epa_list.py
 |==============================
 |[core] EPA PFASMASTERlist, 11Kdescriptorspipelineinput(§2.2 / §3.4)
 |
-|input: data/raw/pfas_master_list.csv   (EPA PFASMASTER, 22,987original records)
-|output: data/processed/pfas_clean.csv   (after cleaning ~10,972rows containingSMILESrecord)
+|input: data/raw/pfas_master_list.csv   (EPA PFASMASTER, 22,987 original records)
+|output: data/processed/pfas_clean.csv   (after cleaning ~10,972 rows containingSMILESrecord)
 |
 |key filters:
 |  1. must haveSMILES(non-empty and not N/A)
