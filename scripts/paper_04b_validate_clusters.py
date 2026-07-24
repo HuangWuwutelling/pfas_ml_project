@@ -475,7 +475,7 @@ def main():
     # 8. save visualization
     save_visualization(X_tsne, X_11k_projected, labels, mean_logkd, names_51)
     
-    print(f"\n✅ Level 2!")
+    print(f"\n✅ Level 2 complete!")
     print(f"  : {OUTPUT_TABLE}")
     print(f"  fig: {SI_DIR}/kd_cluster_tsne.png")
     print(f"  fig: {SI_DIR}/kd_chemical_space_11k.png")

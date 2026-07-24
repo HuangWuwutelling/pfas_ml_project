@@ -4,7 +4,7 @@ S1_calc_descriptors_51pfas.py
 |==============================
 |[core] compute 51PFASRDKitmolecular descriptors(for§2.2)
 |
-|input: data/paper/PFAS_Properties.csv (51PFAS, Smilescolumn)
+|input: data/paper/PFAS_Properties.csv (51 PFAS, Smiles column)
 |output: data/paper/descriptors_51pfas.csv
 |      (51 rows: PFAS + Smiles + RDKIT_SMILES + 225RDKitdescriptors + PFASspecific features)
 |
