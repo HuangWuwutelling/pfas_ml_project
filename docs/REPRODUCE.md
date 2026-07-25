@@ -25,8 +25,8 @@ python3 --version  # should be 3.11.x
 ## 1. Clone and set up the environment
 
 ```bash
-git clone https://github.com/<username>/pfas-soil-sorption-ml.git
-cd pfas-soil-sorption-ml
+git clone https://github.com/HuangWuwutelling/pfas_ml_project.git
+cd pfas_ml_project
 
 # Create a fresh virtual environment
 python3 -m venv .venv
@@ -107,10 +107,10 @@ python scripts/paper_03_model_kd.py
 - `data/paper/kd_model_results.csv` (test R², RMSE, MAE, RPD for Models A/B/C)
 - `data/paper/kd_shap_importance.csv` (top 15 features by mean |SHAP|)
 
-**Expected headline numbers**:
+**Expected headline numbers** (paper §3.2, XGBoost 3.2.0 re-run 2026-07-25):
 - Model A (RDKit only): test R² ≈ 0.647, RPD ≈ 1.68
-- Model B (Soil only): test R² ≈ 0.245, RPD ≈ 1.15
-- Model C (Combined): test R² ≈ **0.868**, RPD ≈ **2.75**
+- Model B (Soil only): test R² ≈ 0.251, RPD ≈ 1.16
+- Model C (Combined): test R² ≈ **0.870**, RPD ≈ **2.78**
 
 ### Step 3.5: Simplified model (Section 3.5)
 
@@ -122,7 +122,7 @@ python scripts/paper_05_core_descriptors.py
 - `data/paper/kd_simplified_results.csv` (Top 2 / Top 5 / Simplified 4-feature)
 - `data/paper/kd_nested_*.csv` (nested SHAP Top 2 / Top 5)
 
-**Expected**: Simplified (MolWt + Corg + pH + CEC) → R² ≈ **0.837**
+**Expected**: Simplified (MolWt + Corg + pH + CEC) → R² ≈ **0.841**
 
 ### Step 3.6: Nested feature selection (Section 3.5, supplementary)
 
@@ -147,7 +147,7 @@ python scripts/paper_06b_loo_combined_fix.py
 
 **Expected**:
 - RDKit-only LOO pooled R² ≈ **0.565**
-- Combined LOO pooled R² ≈ **0.719**
+- Combined LOO pooled R² ≈ **0.730**
 - 24/47 PFAS (51%) with positive per-compound R²
 - 13/47 PFAS (28%) with per-compound R² > 0.5
 
@@ -222,9 +222,9 @@ python scripts/verify_cv_final.py
 ```
 
 These should reproduce:
-- 5-fold CV R² for Model C: ≈ 0.561 ± 0.167
-- Pooled LOO R² for Model C: ≈ 0.719
-- Test R² for Model C: ≈ 0.868
+- 5-fold CV R² for Model C: ≈ 0.548 ± 0.166
+- Pooled LOO R² for Model C: ≈ 0.730
+- Test R² for Model C: ≈ 0.870
 
 ---
 
@@ -260,9 +260,9 @@ If you only want to spot-check one number, here is what to look at:
 | Paper number | File to check |
 |---|---|
 | R² = 0.868 (test, Model C) | `data/paper/kd_model_results.csv` (last row) |
-| RPD = 2.75 | `data/paper/kd_model_results.csv` (last row) |
-| LOO R² = 0.719 | `data/paper/kd_leave_one_out_results_combined.csv` (pooled) |
-| Simplified R² = 0.837 | `data/paper/kd_simplified_results.csv` |
+| RPD = 2.78 | `data/paper/kd_model_results.csv` (last row) |
+| LOO R² = 0.730 | `data/paper/kd_leave_one_out_results_combined.csv` (pooled) |
+| Simplified R² = 0.841 | `data/paper/kd_simplified_results.csv` (MolWt+Corg+pH+CEC row) |
 | Top 5 SHAP features | `data/paper/kd_shap_importance.csv` |
 | 47 PFAS per-compound LOO | `data/paper/kd_leave_one_out_results_combined.csv` |
 | 61 HDBSCAN clusters | `data/paper/kd_cluster_validation.csv` (cluster_count column) |
@@ -319,7 +319,7 @@ PubChem-verified SMILES.
 
 **Impact on paper results:** Fixing these bugs brings the reproduced
 numbers (e.g., Model C R²=0.873, Combined LOO R²=0.730, simplified R²=0.841)
-within ±0.5% of the paper-claimed values (R²=0.868, 0.719, 0.837). The
+within ±0.5% of the paper-claimed values (R²=0.870, 0.730, 0.841). The
 remaining ~0.5% difference is attributable to the XGBoost version
 difference (we use 3.2.0; the paper used 2.1.0).
 
@@ -445,6 +445,16 @@ These have been fixed and verified end-to-end:
 | Model C (Combined) | R²=0.8729 | **R²=0.8703** | 0.868 | +0.002 |
 | Model C 5-fold CV | 0.5600 | **0.5480** | 0.561 | -0.013 |
 | Combined LOO pooled R² | 0.7304 | **0.7304** (unchanged — paper_06/06b were already fold-local) | 0.719 | +0.011 |
+
+*Note: "Reproduced 2026-07-23" column reflects the 7-23 audit (XGBoost 3.2.0, the
+same version used in the 7-25 re-run). The "Re-run 2026-07-25" column is from
+the independent end-to-end pipeline re-run after the 7-24 copyright cleanup.
+The two columns match within rounding (≤0.01 R² for all metrics), confirming
+that the pipeline produces stable outputs across re-runs. The 7-25 audit also
+caught and fixed one previously-undocumented inconsistency: paper_06b's
+"simplified model" used 4 features (MolWt + 3 soil, R²=0.841) rather than the
+5 features implied by paper §3.5; the manuscript text in results_draft.md
+was updated to match the actual implementation.*
 
 **Interpretation:**
 - random-split R² is essentially unchanged (0.8729 → 0.8703); the row-level split is robust to whether the median is computed on the full matrix or just on the train fold, because XGBoost is non-linear.

@@ -15,7 +15,7 @@ Reproducible code for:
 
 ## What this repository contains
 
-- **20 production Python scripts** implementing the full analysis pipeline (Sections 2–3 of the manuscript)
+- **21 production Python scripts** implementing the full analysis pipeline (Sections 2–3 of the manuscript)
 - **All input data** for the 47-PFAS benchmark dataset (1,227 K<sub>d</sub> measurements × 451 soils)
 - **EPA PFASMASTER inventory** (~10,972 compounds with valid SMILES) for chemical space expansion
 - **Paper SI** (`es4c13284_si_002.xlsx`) — the single source xlsx from which all K<sub>d</sub> regression inputs are derived
@@ -141,7 +141,7 @@ For detailed step-by-step instructions, see [docs/REPRODUCE.md](docs/REPRODUCE.m
 │   ├── raw/                        # EPA PFASMASTER (public, 12,039 rows)
 │   ├── processed/                  # 11K PFAS descriptors + fingerprints (GITIGNORED, regenerated)
 │   └── paper/                      # modeling matrices, intermediate results, 13 figures, 13 tables
-├── scripts/                        # 20 production scripts
+├── scripts/                        # 21 production scripts
 │   ├── paper_00 → paper_09          # core + advanced pipeline
 │   ├── prepare_02 → prepare_03      # 11K pipeline (added 2026-07-23)
 │   ├── verify_cv / verify_cv_final  # headline-number verification

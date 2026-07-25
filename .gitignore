@@ -58,3 +58,6 @@ data/raw/pfas_properties.csv
 # Xie 2024 (Elsevier Sci. Total. Environ.) — All rights reserved, do NOT redistribute
 data/source/Elucidating per- and polyfluoroalkyl2024.pdf
 data/source/Elucidating per- and polyfluoroalkyl2024-SI.docx
+
+# Internal reproduction audit log (kept locally, not for public release)
+reproduction-report-*.md
