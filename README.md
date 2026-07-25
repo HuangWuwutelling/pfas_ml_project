@@ -19,6 +19,7 @@ Reproducible code for:
 - **All input data** for the 47-PFAS benchmark dataset (1,227 K<sub>d</sub> measurements × 451 soils)
 - **EPA PFASMASTER inventory** (~10,972 compounds with valid SMILES) for chemical space expansion
 - **Paper SI** (`es4c13284_si_002.xlsx`) — the single source xlsx from which all K<sub>d</sub> regression inputs are derived
+- **External validation data** — Xie et al. (2024) Table 5 (1,780 overlapping measurements) and Morales et al. (2026) SI (84 field soils, long-format extracted to `data/source/morales_long.csv`)
 - **13 publication figures** (6 main + 6 SI + 1 graphical abstract) — already generated under `data/paper/`
 - **13 publication tables** — already generated under `data/paper/`
 
@@ -119,10 +120,22 @@ For detailed step-by-step instructions, see [docs/REPRODUCE.md](docs/REPRODUCE.m
   not the current 22,987+ entries. This is sufficient for the paper's 11K chemical-space
   analysis. Re-fetching from EPA CompTox will yield the current list.
 
-### Source 3: World Soil Information Service (WoSIS)
-- **Used for**: Soil pH context (referenced in Data Availability Statement)
-- **DOI**: [10.17027/isric-wdcsoils-20231130](https://doi.org/10.17027/isric-wdcsoils-20231130)
-- **Note**: Not redistributed; can be queried at [isric.org/explore/wosis](https://www.isric.org/explore/wosis)
+### Source 3: Xie et al. (2024) — External validation (lab)
+- **Used for**: External validation of the paper model (Section 3.8, 22 PFAS overlap with paper)
+- **DOI**: https://doi.org/10.1016/j.scitotenv.2024.176575
+- **License**: Elsevier (All rights reserved — paper SI is downloaded by the user
+  from the DOI and is NOT redistributed in this repo; see `docs/REPRODUCE.md` §17)
+- **Used in script**: `scripts/paper_10_external_validation.py` (auto-extracts Table S5)
+- **Result**: pooled R² = 0.78 on 1,780 Kd measurements (22 overlapping PFAS)
+
+### Source 4: Morales et al. (2026) — External validation (field)
+- **File**: `data/source/Morales_2026_SI.xlsx` (4 sheets, 84 field-contaminated soils)
+- **Source**: [Environmental Research 306(1), 125071](https://doi.org/10.1016/j.envres.2026.125071)
+- **License**: CC BY 4.0 (redistributable with attribution)
+- **Used for**: External validation of the paper model on field-contaminated soils
+  (Section 3.8, 9 PFAS overlap with paper, 57 rows with full features)
+- **Derived file**: `data/source/morales_long.csv` (long-format extraction)
+- **Result**: R² = −3.74 (negative, expected domain-shift from lab to field conditions)
 
 ---
 

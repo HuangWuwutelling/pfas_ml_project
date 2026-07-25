@@ -275,9 +275,10 @@ If you only want to spot-check one number, here is what to look at:
 When citing this code or paper, please use the citation that will be added
 upon publication acceptance. The underlying data sources should also be cited:
 
-- **Paper data**: Fabregat-Palau et al. (2025), *Environ. Sci. Technol.* 59(15), 7678–7687. https://doi.org/10.1021/acs.est.4c13284
-- **EPA PFASMASTER**: https://comptox.epa.gov/dashboard/chemical-lists/PFASMASTER
-- **WoSIS**: https://www.isric.org/explore/wosis
+- **Training data (in-sample)**: Fabregat-Palau et al. (2025), *Environ. Sci. Technol.* 59(15), 7678–7687. https://doi.org/10.1021/acs.est.4c13284
+- **Chemical inventory**: EPA CompTox PFASMASTER, https://comptox.epa.gov/dashboard/chemical-lists/PFASMASTER
+- **External validation (lab)**: Xie et al. (2024), *Sci. Total Environ.* 954, 176575. https://doi.org/10.1016/j.scitotenv.2024.176575
+- **External validation (field)**: Morales et al. (2026), *Environ. Res.* 306(1), 125071. https://doi.org/10.1016/j.envres.2026.125071
 
 ---
 
