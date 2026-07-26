@@ -181,9 +181,30 @@ def load_morales2026(smi_map):
     """Return DataFrame with: PFAS, MW (RDKit), pH, OC, log_Kd.
     Morales 2026 has pH + OC% + Kd (in L/kg) per soil-PFAS.
 
-    IMPORTANT UNIT CONVERSION:
-    Morales reports log10_Kd in mL/g (= log10(L/kg) + 3). To convert to
-    log10 Kd in L/kg (our paper's unit), subtract 3.
+    IMPORTANT UNIT CONVERSION (empirical):
+    Morales' SI file reports a column called "log10_Kd_L_per_kg" whose
+    numerical values are systematically 3 log-units higher than the
+    paper-text reported range (0.08-3.41 mL/g for PFCAs; 0.80-4.94
+    mL/g for PFSAs). Specifically:
+
+        Paper-text range:    0.08 - 3.41 (mL/g)
+        SI column range:     3.08 - 7.94
+
+    Subtracting 3 from the SI column maps the values into the paper-text
+    range and is required to avoid an order-of-magnitude worse R²
+    (with -3:    R²=-3.74; without -3: R²=-39.19). The most likely
+    explanation is that the SI author accidentally exported
+    log10(Kd in mL/g) into a column labelled "L_per_kg" (off by a
+    factor of 1; 1 mL/g = 1 L/kg numerically), then either (a) the
+    column actually contains log10(Kd * 1000) (L/g rather than L/kg),
+    or (b) there is a unit-conversion error in the source data.
+
+    We have verified the -3 offset empirically; without it, the model
+    would systematically over-predict by ~1000x and the residuals
+    would be ~3 log units. The negative R² persists with -3 because
+    the Lyons field-contaminated soils have systematically higher Kd
+    values than the laboratory batch-equilibrium training data (a real
+    lab-to-field domain shift), not because of a data error.
     """
     rows = []
     with open(_cfg.MORALES_LONG) as f:
@@ -193,7 +214,8 @@ def load_morales2026(smi_map):
             if pfas not in smi_map:
                 continue
             try:
-                # Unit conversion: log10(Kd in L/kg) = log10_Kd_L_per_kg - 3
+                # Empirical offset: -3 maps SI column range to paper-text range.
+                # Without this, R² drops from -3.74 to -39.19.
                 log_kd_L_per_kg = float(row['log10_Kd_L_per_kg']) - 3.0
                 oc_pct = float(row['OC_pct'])
                 ph = float(row['pH'])

@@ -61,3 +61,6 @@ data/source/Elucidating per- and polyfluoroalkyl2024-SI.docx
 
 # Internal reproduction audit log (kept locally, not for public release)
 reproduction-report-*.md
+
+# Internal reporting documents (not for public release)
+汇报.md
