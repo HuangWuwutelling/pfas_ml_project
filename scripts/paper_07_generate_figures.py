@@ -20,6 +20,9 @@ output: paper/figures/ and paper/tables/
 import csv
 import os
 import sys
+import sys as _sys
+_sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _shared_config import NON_FEATURE
 import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
@@ -28,7 +31,10 @@ warnings.filterwarnings("ignore")
 PROJECT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SI_DIR = os.path.join(PROJECT, "data", "paper")
 FIG_DIR = os.path.join(PROJECT, "data", "paper")
-TBL_DIR = os.path.join(PROJECT, "paper", "tables")
+# Tables go alongside figures under data/paper/ to unify output
+# directories (13.7). The old paper/tables/ was gitignored and not
+# read by any other script, so the move is safe.
+TBL_DIR = os.path.join(PROJECT, "data", "paper")
 os.makedirs(FIG_DIR, exist_ok=True)
 os.makedirs(TBL_DIR, exist_ok=True)
 
@@ -87,7 +93,7 @@ def fig1_predicted_vs_actual(rows):
 
     # Prepare data: we need to retrain Combined model
     from collections import defaultdict
-    NON_FEATURE = {"PFAS_name", "log_Kd", "Kd_L_kg", "log_Koc", "_n_soil_missing"}
+    # NON_FEATURE imported from _shared_config (top of file)
     
     fieldnames = list(rows[0].keys())
     desc_cols = [c for c in fieldnames if c not in NON_FEATURE]
@@ -546,7 +552,7 @@ def figS3_shap_bar(rows):
     from sklearn.model_selection import train_test_split
     
     # Prepare data (same as fig1)
-    NON_FEATURE = {"PFAS_name", "log_Kd", "Kd_L_kg", "log_Koc", "_n_soil_missing"}
+    # NON_FEATURE imported from _shared_config (top of file)
     fieldnames = list(rows[0].keys())
     desc_cols = [c for c in fieldnames if c not in NON_FEATURE]
     
@@ -616,7 +622,7 @@ def figS4_shap_beeswarm(rows):
     import warnings
     warnings.filterwarnings("ignore", category=FutureWarning)
     
-    NON_FEATURE = {"PFAS_name", "log_Kd", "Kd_L_kg", "log_Koc", "_n_soil_missing"}
+    # NON_FEATURE imported from _shared_config (top of file)
     fieldnames = list(rows[0].keys())
     desc_cols = [c for c in fieldnames if c not in NON_FEATURE]
     

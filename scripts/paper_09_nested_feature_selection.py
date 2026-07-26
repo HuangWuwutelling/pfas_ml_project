@@ -31,8 +31,10 @@ SI_DIR = os.path.join(PROJECT, "data", "paper")
 INPUT = os.path.join(SI_DIR, "feature_matrix_kd.csv")
 OUTPUT = os.path.join(SI_DIR, "kd_nested_feature_selection.csv")
 
-NON_FEATURE = {"PFAS_name", "log_Kd", "Kd_L_kg", "log_Koc", "_n_soil_missing"}
-SOIL_FEATURES = ["Corg_%", "foc", "pH", "Sand", "Silt", "Clay", "CEC", "Fe_g_kg", "Al_g_kg"]
+# Shared constants (centralised in scripts/_shared_config.py)
+import sys as _sys
+_sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _shared_config import NON_FEATURE, SOIL_FEATURES
 TOP_K_VALUES = [2, 5]  # Test multiple feature budgets
 RANDOM_SEED = 42
 

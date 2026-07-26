@@ -41,22 +41,27 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-BASE = '/home/zaoquan/pfas_ml_project/'
-DATA_PAPER = BASE + 'data/paper/'
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _shared_config import NON_FEATURE
+
+# Paths from _shared_config (13.3 — unify path patterns across 21 scripts)
+import _shared_config as _cfg
+BASE = _cfg.PROJECT_ROOT
+DATA_PAPER = _cfg.DATA_PAPER
 
 # ----------------------------------------------------------------------
 # Step 1: Load paper data and train 3 model variants
 # ----------------------------------------------------------------------
 
 def load_paper_data():
-    df = pd.read_csv(DATA_PAPER + 'feature_matrix_kd.csv')
-    NON_FEATURE = ['PFAS_name', 'log_Kd', 'Kd_L_kg', 'log_Koc', '_n_soil_missing']
+    df = pd.read_csv(os.path.join(DATA_PAPER, 'feature_matrix_kd.csv'))
     feature_cols = [c for c in df.columns if c not in NON_FEATURE]
     return df, feature_cols
 
 
 def get_smi_map():
-    path = DATA_PAPER + 'PFAS_Properties.csv'
+    path = os.path.join(DATA_PAPER, 'PFAS_Properties.csv')
     smi_map = {}
     with open(path) as f:
         reader = csv.DictReader(f)
@@ -91,19 +96,26 @@ def load_xie2024(smi_map):
 
     This function auto-extracts from
     data/source/Elucidating per- and polyfluoroalkyl2024-SI.docx
-    (if present locally), or reads from /tmp/xie2024_table5.csv (if pre-extracted).
+    (if present locally), or reads from a cached CSV in the system
+    temp directory (if pre-extracted). The cache path uses
+    `tempfile.gettempdir()` so the script is cross-platform
+    (works on Linux / macOS / Windows / WSL).
     """
     import os
+    import tempfile
 
     rows = []
     csv_path = None
 
+    # Use system temp dir for cross-platform cache (13.6 — avoid hard-coded /tmp)
+    cache_path = os.path.join(tempfile.gettempdir(), 'xie2024_table5.csv')
+
     # Try pre-extracted CSV first
-    if os.path.exists('/tmp/xie2024_table5.csv'):
-        csv_path = '/tmp/xie2024_table5.csv'
+    if os.path.exists(cache_path):
+        csv_path = cache_path
     else:
         # Try auto-extract from the SI docx
-        si_docx = (BASE + 'data/source/Elucidating per- and polyfluoroalkyl2024-SI.docx')
+        si_docx = _cfg.XIE_SI_DOCX
         if os.path.exists(si_docx):
             try:
                 import docx
@@ -112,12 +124,12 @@ def load_xie2024(smi_map):
                     if len(tbl.rows) > 0:
                         first = [c.text.strip() for c in tbl.rows[0].cells]
                         if 'PFAS' in first and 'LogKd' in first:
-                            with open('/tmp/xie2024_table5.csv', 'w', newline='') as f:
+                            with open(cache_path, 'w', newline='') as f:
                                 w = csv.writer(f)
                                 for row in tbl.rows:
                                     w.writerow([c.text.strip() for c in row.cells])
-                            csv_path = '/tmp/xie2024_table5.csv'
-                            print(f"  Auto-extracted {len(tbl.rows)} rows from Xie SI to /tmp/xie2024_table5.csv")
+                            csv_path = cache_path
+                            print(f"  Auto-extracted {len(tbl.rows)} rows from Xie SI to {cache_path}")
                             break
             except Exception as e:
                 print(f"  Could not auto-extract from SI: {e}")
@@ -127,7 +139,7 @@ def load_xie2024(smi_map):
         print("    To run Xie external validation, either:")
         print("    1) Download from https://doi.org/10.1016/j.scitotenv.2024.176575")
         print("       and save to data/source/Elucidating per- and polyfluoroalkyl2024-SI.docx")
-        print("    2) Or pre-extract Table S5 to /tmp/xie2024_table5.csv with columns:")
+        print(f"    2) Or pre-extract Table S5 to {cache_path} with columns:")
         print("       PFAS, LogKd, pH, OC, CEC, Sand, Silt, Clay, MW, LogP, LogS, ATSm8, SpDiam")
         print("    Then re-run this script. Skipping Xie external validation for now.\n")
         return pd.DataFrame()
@@ -174,7 +186,7 @@ def load_morales2026(smi_map):
     log10 Kd in L/kg (our paper's unit), subtract 3.
     """
     rows = []
-    with open(BASE + 'data/source/morales_long.csv') as f:
+    with open(_cfg.MORALES_LONG) as f:
         reader = csv.DictReader(f)
         for row in reader:
             pfas = row['PFAS'].strip()
@@ -301,12 +313,16 @@ if __name__ == '__main__':
     print("\n[Step 2] External validation: Xie et al. (2024) [25]...")
     smi_map = get_smi_map()
     xie_df = load_xie2024(smi_map)
-    print(f"  Xie overlap with paper: {xie_df['PFAS'].nunique()} unique PFAS, {len(xie_df)} rows")
-    print(f"  PFAS: {sorted(xie_df['PFAS'].unique())}")
-    xie_results = predict_xie(models, xie_df)
-    for name, res in xie_results.items():
-        print(f"  {name:25s}: R²={res['r2']:+.4f}, RMSE={res['rmse']:.4f}")
-    xie_df.to_csv(DATA_PAPER + 'kd_external_validation_xie2024.csv', index=False)
+    if len(xie_df) == 0:
+        print("  ⚠️  Skipping Xie external validation (no overlapping data).")
+        xie_results = {}
+    else:
+        print(f"  Xie overlap with paper: {xie_df['PFAS'].nunique()} unique PFAS, {len(xie_df)} rows")
+        print(f"  PFAS: {sorted(xie_df['PFAS'].unique())}")
+        xie_results = predict_xie(models, xie_df)
+        for name, res in xie_results.items():
+            print(f"  {name:25s}: R²={res['r2']:+.4f}, RMSE={res['rmse']:.4f}")
+        xie_df.to_csv(os.path.join(DATA_PAPER, 'kd_external_validation_xie2024.csv'), index=False)
 
     # Step 3: External validation on Morales 2026
     print("\n[Step 3] External validation: Morales et al. (2026) [26]...")
@@ -324,7 +340,7 @@ if __name__ == '__main__':
         n_estimators=500, max_depth=4, learning_rate=0.05,
         subsample=0.8, colsample_bytree=0.8, random_state=42, n_jobs=-1,
     )
-    paper_data = pd.read_csv(DATA_PAPER + 'feature_matrix_kd.csv')
+    paper_data = pd.read_csv(os.path.join(DATA_PAPER, 'feature_matrix_kd.csv'))
     X_M = paper_data[morales_feats].values.astype(float)
     y_M = paper_data['log_Kd'].values.astype(float)
     model_M.fit(X_M, y_M)
@@ -335,7 +351,7 @@ if __name__ == '__main__':
     print(f"  Morales 3-feat (MolWt+Corg+pH): R²={r2_mor:+.4f}, RMSE={rmse_mor:.4f}")
     morales_results = {'Morales_3feat': {'pred': mor_pred, 'r2': r2_mor, 'rmse': rmse_mor,
                                        'y': morales_clean['log_Kd'].values}}
-    morales_clean.to_csv(DATA_PAPER + 'kd_external_validation_morales2026.csv', index=False)
+    morales_clean.to_csv(os.path.join(DATA_PAPER, 'kd_external_validation_morales2026.csv'), index=False)
 
     # Step 4: Per-PFAS breakdown for the simplified model
     print("\n[Step 4] Per-PFAS R² for simplified model (Variant B)...")
@@ -416,7 +432,7 @@ if __name__ == '__main__':
 
     plt.suptitle('External validation of paper XGBoost Kd model on independent datasets', fontsize=12, fontweight='bold')
     plt.tight_layout(rect=[0, 0, 1, 0.97])
-    plt.savefig(DATA_PAPER + 'fig10_external_validation.png', dpi=200, bbox_inches='tight')
+    plt.savefig(os.path.join(DATA_PAPER, 'fig10_external_validation.png'), dpi=200, bbox_inches='tight')
     print(f"  Saved: fig10_external_validation.png")
 
     # Summary

@@ -30,10 +30,11 @@ INPUT_FILE = os.path.join(SI_DIR, "feature_matrix_kd.csv")
 OUTPUT_RESULTS = os.path.join(SI_DIR, "kd_model_results.csv")
 OUTPUT_SHAP = os.path.join(SI_DIR, "kd_shap_importance.csv")
 
-# RDKit descriptor prefix (non-feature columns)
-# Non-feature columns (unified naming, shared across all scripts)
-NON_FEATURE = {"PFAS_name", "log_Kd", "Kd_L_kg", "log_Koc"}
-SOIL_FEATURE_NAMES = ["Corg_%", "foc", "pH", "Sand", "Silt", "Clay", "CEC", "Fe_g_kg", "Al_g_kg"]
+# Shared constants (centralised in scripts/_shared_config.py — see §13.1-13.3 of
+# reproduction-report-2026-07-25.md). Importing rather than redefining eliminates
+# drift across the 21 scripts.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _shared_config import NON_FEATURE, SOIL_FEATURES as SOIL_FEATURE_NAMES
 
 
 def load_data():

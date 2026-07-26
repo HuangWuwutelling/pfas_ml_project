@@ -35,8 +35,10 @@ INPUT_FILE = os.path.join(SI_DIR, "feature_matrix_kd.csv")
 OUTPUT_RESULTS = os.path.join(SI_DIR, "kd_leave_one_out_results.csv")
 OUTPUT_SUMMARY = os.path.join(SI_DIR, "kd_leave_one_out_summary.csv")
 
-NON_FEATURE = {"PFAS_name", "log_Kd", "Kd_L_kg", "log_Koc"}
-SOIL_FEATURES = {"Corg_%", "foc", "pH", "Sand", "Silt", "Clay", "CEC", "Fe_g_kg", "Al_g_kg"}
+# Shared constants (centralised in scripts/_shared_config.py)
+import sys as _sys
+_sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _shared_config import NON_FEATURE, SOIL_FEATURES
 
 
 def load_data():
