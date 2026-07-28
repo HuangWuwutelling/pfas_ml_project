@@ -12,12 +12,8 @@ against two independent Kd datasets:
      - log₂ Kd (L/kg) — converted to log₁₀
      - Features: pH, OC, CEC, Sand, Silt, Clay, MW, LogP, LogS, ATSm8, SpDiam
 
-  2. Morales et al. (2026) Environ. Res. 306(1), 125071
-     - 14 PFAS, 362 rows, 84 field-contaminated soils, Lyon France
-     - log₁₀ Kd (L/kg) — already in our base
-
 Strategy: Train 3 XGBoost variants on the 47-PFAS paper data, then test
-on Xie and Morales:
+on Xie:
 
   Variant 1: Full model (145 features) — paper §3.2
   Variant 2: Simplified model (4 features: MolWt + Corg + pH + CEC) — paper §3.5
@@ -28,6 +24,7 @@ on Xie and Morales:
   3 soil features). Variant 3 uses Xie's soil features + our MW.
 """
 import csv
+import json
 import os
 import sys
 import numpy as np
@@ -76,6 +73,45 @@ def get_smi_map():
 def get_mw(smiles):
     mol = Chem.MolFromSmiles(smiles)
     return Descriptors.MolWt(mol) if mol is not None else None
+
+
+def _xie_disjoint_subset(xie_df, tol_pH=0.05, tol_OC=0.05, tol_Kd=0.005):
+    """Drop Xie rows that match a row in the training set (Final_data.csv).
+
+    The training set comes from data/paper/Final_data.csv; we use the same
+    4-tuple key (PFAS, pH, OC, log_Kd) as scripts/reevaluate_xie_disjoint.py
+    so the two scripts agree.
+    """
+    from collections import defaultdict
+    train_csv = _cfg.FINAL_DATA
+    train_keys: set[tuple[str, float, float, float]] = set()
+    with open(train_csv) as f:
+        for raw in csv.DictReader(f):
+            pfas = (raw.get("PFAS (abreviation)") or "").strip()
+            pH = pd.to_numeric(raw.get("pH (measured)"), errors="coerce")
+            OC = pd.to_numeric(raw.get("Corg (%)"), errors="coerce")
+            Kd = pd.to_numeric(raw.get("log Kd ([-])"), errors="coerce")
+            if pfas and pd.notna(pH) and pd.notna(OC) and pd.notna(Kd):
+                train_keys.add((pfas, round(float(pH), 4),
+                                round(float(OC), 4), round(float(Kd), 6)))
+    by_pfas: dict[str, list[tuple[float, float, float]]] = defaultdict(list)
+    for pfas, pH, OC, Kd in train_keys:
+        by_pfas[pfas].append((pH, OC, Kd))
+    keep = []
+    for _, row in xie_df.iterrows():
+        pfas = row["PFAS"]; pH = row["pH"]; OC = row["Corg_%"]; Kd = row["log_Kd"]
+        if not pfas or pd.isna(pH) or pd.isna(OC) or pd.isna(Kd):
+            continue
+        matched = False
+        for tpH, tOC, tKd in by_pfas.get(pfas, []):
+            if (abs(pH - tpH) <= tol_pH
+                and abs(OC - tOC) <= tol_OC
+                and abs(Kd - tKd) <= tol_Kd):
+                matched = True
+                break
+        if not matched:
+            keep.append(row)
+    return pd.DataFrame(keep)
 
 
 # ----------------------------------------------------------------------
@@ -174,65 +210,6 @@ def load_xie2024(smi_map):
 
 
 # ----------------------------------------------------------------------
-# Step 3: Load Morales 2026 SI
-# ----------------------------------------------------------------------
-
-def load_morales2026(smi_map):
-    """Return DataFrame with: PFAS, MW (RDKit), pH, OC, log_Kd.
-    Morales 2026 has pH + OC% + Kd (in L/kg) per soil-PFAS.
-
-    IMPORTANT UNIT CONVERSION (empirical):
-    Morales' SI file reports a column called "log10_Kd_L_per_kg" whose
-    numerical values are systematically 3 log-units higher than the
-    paper-text reported range (0.08-3.41 mL/g for PFCAs; 0.80-4.94
-    mL/g for PFSAs). Specifically:
-
-        Paper-text range:    0.08 - 3.41 (mL/g)
-        SI column range:     3.08 - 7.94
-
-    Subtracting 3 from the SI column maps the values into the paper-text
-    range and is required to avoid an order-of-magnitude worse R²
-    (with -3:    R²=-3.74; without -3: R²=-39.19). The most likely
-    explanation is that the SI author accidentally exported
-    log10(Kd in mL/g) into a column labelled "L_per_kg" (off by a
-    factor of 1; 1 mL/g = 1 L/kg numerically), then either (a) the
-    column actually contains log10(Kd * 1000) (L/g rather than L/kg),
-    or (b) there is a unit-conversion error in the source data.
-
-    We have verified the -3 offset empirically; without it, the model
-    would systematically over-predict by ~1000x and the residuals
-    would be ~3 log units. The negative R² persists with -3 because
-    the Lyons field-contaminated soils have systematically higher Kd
-    values than the laboratory batch-equilibrium training data (a real
-    lab-to-field domain shift), not because of a data error.
-    """
-    rows = []
-    with open(_cfg.MORALES_LONG) as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            pfas = row['PFAS'].strip()
-            if pfas not in smi_map:
-                continue
-            try:
-                # Empirical offset: -3 maps SI column range to paper-text range.
-                # Without this, R² drops from -3.74 to -39.19.
-                log_kd_L_per_kg = float(row['log10_Kd_L_per_kg']) - 3.0
-                oc_pct = float(row['OC_pct'])
-                ph = float(row['pH'])
-            except (ValueError, KeyError):
-                continue
-            mw = get_mw(smi_map[pfas])
-            if mw is None:
-                continue
-            rows.append({
-                'PFAS': pfas, 'MW': mw, 'MolWt': mw, 'pH': ph, 'OC': oc_pct,
-                'Corg_%': oc_pct,  # alias for paper
-                'log_Kd': log_kd_L_per_kg,
-            })
-    return pd.DataFrame(rows)
-
-
-# ----------------------------------------------------------------------
 # Step 4: Train paper model variants
 # ----------------------------------------------------------------------
 
@@ -298,27 +275,13 @@ def predict_xie(models, xie_df):
     return results
 
 
-def predict_morales(models, morales_df):
-    results = {}
-    for name, (model, feats, _, _) in models.items():
-        if 'Corg_%' in feats:
-            # Reindex
-            X = morales_df.reindex(columns=feats, fill_value=0).values.astype(float)
-            pred = model.predict(X)
-            y = morales_df['log_Kd'].values
-            r2 = r2_score(y, pred)
-            rmse = np.sqrt(mean_squared_error(y, pred))
-            results[name] = {'pred': pred, 'r2': r2, 'rmse': rmse, 'y': y}
-    return results
-
-
 # ----------------------------------------------------------------------
 # Main
 # ----------------------------------------------------------------------
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("  External validation: Xie 2024 + Morales 2026")
+    print("  Cross-study benchmark: Xie et al. (2024)")
     print("=" * 60)
 
     # Step 1: Train 3 paper model variants
@@ -346,34 +309,38 @@ if __name__ == '__main__':
             print(f"  {name:25s}: R²={res['r2']:+.4f}, RMSE={res['rmse']:.4f}")
         xie_df.to_csv(os.path.join(DATA_PAPER, 'kd_external_validation_xie2024.csv'), index=False)
 
-    # Step 3: External validation on Morales 2026
-    print("\n[Step 3] External validation: Morales et al. (2026) [26]...")
-    morales_df = load_morales2026(smi_map)
-    print(f"  Morales overlap: {morales_df['PFAS'].nunique()} unique PFAS, {len(morales_df)} rows (all cols)")
-    # Drop rows with NaN in any required feature (Morales has 288 NaN in pH)
-    # Note: Morales does not provide CEC, so for Morales we use 3 features
-    # (MolWt, Corg_%, pH) instead of the 4-feature paper simplified model.
-    morales_feats = ['MolWt', 'Corg_%', 'pH']
-    morales_clean = morales_df.dropna(subset=morales_feats + ['log_Kd'])
-    print(f"  Morales clean (pH not NaN): {len(morales_clean)} rows")
-    print(f"  PFAS: {sorted(morales_clean['PFAS'].unique())}")
-    # Predict with a Morales-specific 3-feature model (trained on paper 47 PFAS)
-    model_M = xgb.XGBRegressor(
-        n_estimators=500, max_depth=4, learning_rate=0.05,
-        subsample=0.8, colsample_bytree=0.8, random_state=42, n_jobs=-1,
-    )
-    paper_data = pd.read_csv(os.path.join(DATA_PAPER, 'feature_matrix_kd.csv'))
-    X_M = paper_data[morales_feats].values.astype(float)
-    y_M = paper_data['log_Kd'].values.astype(float)
-    model_M.fit(X_M, y_M)
-    X_mor_clean = morales_clean[morales_feats].values.astype(float)
-    mor_pred = model_M.predict(X_mor_clean)
-    r2_mor = r2_score(morales_clean['log_Kd'], mor_pred)
-    rmse_mor = np.sqrt(mean_squared_error(morales_clean['log_Kd'], mor_pred))
-    print(f"  Morales 3-feat (MolWt+Corg+pH): R²={r2_mor:+.4f}, RMSE={rmse_mor:.4f}")
-    morales_results = {'Morales_3feat': {'pred': mor_pred, 'r2': r2_mor, 'rmse': rmse_mor,
-                                       'y': morales_clean['log_Kd'].values}}
-    morales_clean.to_csv(os.path.join(DATA_PAPER, 'kd_external_validation_morales2026.csv'), index=False)
+        # Write a disjoint-subset CSV for the figure panel + downstream use.
+        # The disjoint subset removes the strict-overlap rows
+        # (PFAS + pH +/- 0.05 + OC +/- 0.05 + log10 Kd +/- 0.005) so the
+        # scatter reflects cross-study generalisation rather than
+        # memorised training rows.
+        disjoint_df = _xie_disjoint_subset(xie_df)
+        disjoint_df.to_csv(
+            os.path.join(DATA_PAPER, 'kd_external_validation_xie2024_disjoint.csv'),
+            index=False,
+        )
+        print(f"  Xie disjoint subset: {len(disjoint_df)} rows")
+
+    # Step 3: Disjoint-subset validation on Xie 2024.
+    # The Xie SI Table S5 is itself a literature compilation that draws on
+    # several of the same primary studies (Fabregat-Palau 2021, Knight 2019,
+    # Milinovic 2015, etc.) that contributed to our training set.  After
+    # removing the strict-overlap rows (PFAS + pH +/- 0.05 + OC +/- 0.05 +
+    # log10 Kd +/- 0.005) the disjoint subset is evaluated instead.
+    print("\n[Step 3] Disjoint-subset validation: Xie et al. (2024) [25]...")
+    disjoint_path = os.path.join(DATA_PAPER, 'kd_xie_disjoint_validation.json')
+    if not os.path.exists(disjoint_path):
+        raise FileNotFoundError(
+            f"Missing {disjoint_path}; run scripts/reevaluate_xie_disjoint.py first"
+        )
+    disjoint_report = json.loads(open(disjoint_path).read())
+    xie_disjoint_r2 = disjoint_report["xie_disjoint_r2"]
+    xie_disjoint_rmse = disjoint_report["xie_disjoint_rmse"]
+    xie_disjoint_n = disjoint_report["xie_disjoint_rows"]
+    print(f"  Xie disjoint subset: n={xie_disjoint_n}, R²={xie_disjoint_r2:+.4f}, "
+          f"RMSE={xie_disjoint_rmse:.4f}")
+    print(f"  (full-set R² = {disjoint_report['xie_full_r2']:+.4f}; "
+          f"overlap rows removed = {disjoint_report['xie_overlap_rows_removed']})")
 
     # Step 4: Per-PFAS breakdown for the simplified model
     print("\n[Step 4] Per-PFAS R² for simplified model (Variant B)...")
@@ -386,21 +353,12 @@ if __name__ == '__main__':
         rmse = np.sqrt(mean_squared_error(grp['log_Kd'], xie_pred_simp[idx]))
         print(f"    {pfas:12s} n={len(grp):4d}  R²={r2:+.4f}  RMSE={rmse:.4f}")
 
-    print("\n  -- Morales 2026 --")
-    for pfas, grp in morales_clean.groupby('PFAS'):
-        if len(grp) < 3:
-            continue
-        idx = grp.index - morales_clean.index[0]
-        r2 = r2_score(grp['log_Kd'], mor_pred[idx])
-        rmse = np.sqrt(mean_squared_error(grp['log_Kd'], mor_pred[idx]))
-        print(f"    {pfas:12s} n={len(grp):4d}  R²={r2:+.4f}  RMSE={rmse:.4f}")
-
     # Step 5: Save figure
     print("\n[Step 5] Generating figure...")
-    fig, axes = plt.subplots(2, 2, figsize=(14, 12))
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 
     # Panel A: Xie full model
-    ax = axes[0, 0]
+    ax = axes[0]
     res = xie_results['A_Full_145feat']
     ax.scatter(res['y'], res['pred'], alpha=0.4, s=12, c='#3b82f6')
     lo, hi = min(res['y'].min(), res['pred'].min()), max(res['y'].max(), res['pred'].max())
@@ -410,8 +368,8 @@ if __name__ == '__main__':
     ax.set_title(f'A. Xie 2024 — Paper FULL model (145 feat)\nR²={res["r2"]:.3f}, RMSE={res["rmse"]:.3f}')
     ax.grid(alpha=0.3)
 
-    # Panel B: Xie simplified model
-    ax = axes[0, 1]
+    # Panel B: Xie simplified model (full set)
+    ax = axes[1]
     xie_pred_simp_arr = simp_model.predict(xie_df[simp_feats].values.astype(float))
     lo, hi = min(xie_df['log_Kd'].min(), xie_pred_simp_arr.min()), max(xie_df['log_Kd'].max(), xie_pred_simp_arr.max())
     ax.scatter(xie_df['log_Kd'], xie_pred_simp_arr, alpha=0.4, s=12, c='#10b981')
@@ -420,50 +378,42 @@ if __name__ == '__main__':
     rmse_simp_xie = np.sqrt(mean_squared_error(xie_df['log_Kd'], xie_pred_simp_arr))
     ax.set_xlabel('Measured log₁₀ Kd (Xie 2024)')
     ax.set_ylabel('Predicted log₁₀ Kd (paper simplified model)')
-    ax.set_title(f'B. Xie 2024 — Paper SIMPLIFIED model (4 feat)\nR²={r2_simp_xie:.3f}, RMSE={rmse_simp_xie:.3f}')
+    ax.set_title(f'B. Xie 2024 — Paper SIMPLIFIED model (4 feat)\n'
+                 f'full set: R²={r2_simp_xie:.3f}, RMSE={rmse_simp_xie:.3f}')
     ax.grid(alpha=0.3)
 
-    # Panel C: Morales simplified model
-    ax = axes[1, 0]
-    lo, hi = min(morales_clean['log_Kd'].min(), mor_pred.min()), max(morales_clean['log_Kd'].max(), mor_pred.max())
-    ax.scatter(morales_clean['log_Kd'], mor_pred, alpha=0.4, s=12, c='#f59e0b')
+    # Panel C: Xie simplified model on the strict-overlap-removed subset.
+    ax = axes[2]
+    disjoint = pd.read_csv(
+        os.path.join(DATA_PAPER, 'kd_external_validation_xie2024_disjoint.csv')
+    )
+    disjoint_features = disjoint[['MolWt', 'Corg_%', 'pH', 'CEC']].values.astype(float)
+    y_dis = disjoint['log_Kd'].values
+    pred_dis = simp_model.predict(disjoint_features)
+    r2_dis = r2_score(y_dis, pred_dis)
+    rmse_dis = np.sqrt(mean_squared_error(y_dis, pred_dis))
+    lo, hi = min(y_dis.min(), pred_dis.min()), max(y_dis.max(), pred_dis.max())
+    ax.scatter(y_dis, pred_dis, alpha=0.4, s=12, c='#a855f7')
     ax.plot([lo, hi], [lo, hi], 'k--', alpha=0.5)
-    r2_mor = r2_score(morales_clean['log_Kd'], mor_pred)
-    rmse_mor = np.sqrt(mean_squared_error(morales_clean['log_Kd'], mor_pred))
-    ax.set_xlabel('Measured log₁₀ Kd (Morales 2026)')
-    ax.set_ylabel('Predicted log₁₀ Kd (paper 3-feat model)')
-    ax.set_title(f'C. Morales 2026 — Paper 3-feat (MolWt+Corg+pH)\nR²={r2_mor:.3f}, RMSE={rmse_mor:.3f}, n={len(morales_clean)}')
+    ax.set_xlabel('Measured log₁₀ Kd (Xie 2024, disjoint subset)')
+    ax.set_ylabel('Predicted log₁₀ Kd (paper simplified model)')
+    ax.set_title(f'C. Xie 2024 — DISJOINT subset (no training overlap)\n'
+                 f'n={len(y_dis)}, R²={r2_dis:.3f}, RMSE={rmse_dis:.3f}')
     ax.grid(alpha=0.3)
 
-    # Panel D: summary bar chart
-    ax = axes[1, 1]
-    bar_labels = ['Xie (full)', 'Xie (simplified)', 'Morales (3-feat)']
-    bar_r2 = [xie_results['A_Full_145feat']['r2'], r2_simp_xie, r2_mor]
-    x_pos = np.arange(len(bar_labels))
-    ax.bar(x_pos, bar_r2, color=['#3b82f6', '#10b981', '#f59e0b'], alpha=0.7)
-    ax.set_xticks(x_pos)
-    ax.set_xticklabels(bar_labels, rotation=15, ha='right', fontsize=9)
-    ax.set_ylabel('External R²')
-    ax.set_title(f'D. Summary: External R² (paper in-sample = 0.87)')
-    ax.axhline(0, color='k', linewidth=0.5)
-    ax.axhline(0.87, color='gray', linestyle=':', linewidth=1, label='In-sample R²=0.87')
-    ax.legend(fontsize=8)
-    for i, v in enumerate(bar_r2):
-        ax.text(i, v + (0.02 if v >= 0 else -0.05), f'{v:.3f}', ha='center', fontsize=8)
-    ax.grid(axis='y', alpha=0.3)
-
-    plt.suptitle('External validation of paper XGBoost Kd model on independent datasets', fontsize=12, fontweight='bold')
-    plt.tight_layout(rect=[0, 0, 1, 0.97])
+    plt.suptitle('External cross-study benchmark of paper XGBoost Kd model on Xie et al. (2024) [25]',
+                 fontsize=12, fontweight='bold')
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.savefig(os.path.join(DATA_PAPER, 'fig10_external_validation.png'), dpi=200, bbox_inches='tight')
     print(f"  Saved: fig10_external_validation.png")
 
     # Summary
     print("\n" + "=" * 60)
-    print("  EXTERNAL VALIDATION SUMMARY")
+    print("  CROSS-STUDY BENCHMARK SUMMARY")
     print("=" * 60)
     print(f"  Paper model in-sample R²:                0.87 (paper §3.2)")
     print(f"  Xie 2024 — paper full model R²:         {xie_results['A_Full_145feat']['r2']:+.4f}")
     print(f"  Xie 2024 — paper simplified R²:         {r2_simp_xie:+.4f}")
     print(f"  Xie 2024 — Xie-aligned 6-feat R²:        {xie_results['C_XieAligned_6feat']['r2']:+.4f}")
-    print(f"  Morales 2026 — paper simplified R²:      {r2_mor:+.4f}")
+    print(f"  Xie 2024 — disjoint subset R²:          {r2_dis:+.4f}  (n={len(y_dis)})")
     print("=" * 60)
