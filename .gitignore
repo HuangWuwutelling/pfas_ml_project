@@ -64,3 +64,9 @@ reproduction-report-*.md
 
 # Internal reporting documents (not for public release)
 汇报.md
+
+# Excel/Word temporary lock files
+~$*.xlsx
+~$*.docx
+~$*.doc
+~$*.xls
