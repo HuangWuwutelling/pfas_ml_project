@@ -1,0 +1,26 @@
+{
+  "strict_tolerance": {
+    "pH": 0.05,
+    "OC": 0.05,
+    "Kd": 0.005
+  },
+  "xie_input_rows": 1780,
+  "xie_overlap_rows_removed": 162,
+  "xie_disjoint_rows": 1618,
+  "model": "4-feature XGBoost (MolWt+Corg+pH+CEC) trained on 47-PFAS paper data",
+  "xie_full_r2": 0.7834,
+  "xie_full_rmse": 0.3843,
+  "xie_disjoint_r2": 0.7781,
+  "xie_disjoint_rmse": 0.3972,
+  "overlap_removed_per_pfas": {
+    "PFOA": 105,
+    "PFOS": 18,
+    "PFBA": 8,
+    "PFHxS": 8,
+    "PFBS": 7,
+    "PFHxA": 7,
+    "PFNA": 7,
+    "6:2 FTS": 1,
+    "PFDA": 1
+  }
+}

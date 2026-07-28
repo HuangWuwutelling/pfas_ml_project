@@ -1,0 +1,135 @@
+{
+  "train_total_rows": 1849,
+  "xie_total_rows": 2148,
+  "train_pfas_unique": 47,
+  "xie_pfas_unique": 26,
+  "pfas_in_both": 22,
+  "train_rows_in_xie_strict": 169,
+  "train_rows_in_xie_loose": 368,
+  "train_pct_in_xie_strict": 9.1,
+  "feature_matrix_rows": 1219,
+  "feature_matrix_rows_in_xie_strict": 161,
+  "feature_matrix_pct_in_xie_strict": 13.2,
+  "by_author_top10": [
+    {
+      "author": "Knight",
+      "year": 2019.0,
+      "total": 100,
+      "strict_in_xie": 99,
+      "loose_in_xie": 100,
+      "pct_strict": 99.0
+    },
+    {
+      "author": "Fabregat-Palau",
+      "year": 2021.0,
+      "total": 56,
+      "strict_in_xie": 43,
+      "loose_in_xie": 44,
+      "pct_strict": 76.8
+    },
+    {
+      "author": "Milinovic",
+      "year": 2015.0,
+      "total": 18,
+      "strict_in_xie": 12,
+      "loose_in_xie": 14,
+      "pct_strict": 66.7
+    },
+    {
+      "author": "Umeh",
+      "year": 2021.0,
+      "total": 111,
+      "strict_in_xie": 9,
+      "loose_in_xie": 76,
+      "pct_strict": 8.1
+    },
+    {
+      "author": "Campos Pereira",
+      "year": 2023.0,
+      "total": 59,
+      "strict_in_xie": 3,
+      "loose_in_xie": 21,
+      "pct_strict": 5.1
+    },
+    {
+      "author": "Mejia-Avenda\u00f1o",
+      "year": 2021.0,
+      "total": 45,
+      "strict_in_xie": 2,
+      "loose_in_xie": 15,
+      "pct_strict": 4.4
+    },
+    {
+      "author": "McLachlan",
+      "year": 2019.0,
+      "total": 28,
+      "strict_in_xie": 1,
+      "loose_in_xie": 7,
+      "pct_strict": 3.6
+    },
+    {
+      "author": "Yue Zhi",
+      "year": 2018.0,
+      "total": 5,
+      "strict_in_xie": 0,
+      "loose_in_xie": 0,
+      "pct_strict": 0.0
+    },
+    {
+      "author": "Nguyen",
+      "year": 2020.0,
+      "total": 288,
+      "strict_in_xie": 0,
+      "loose_in_xie": 25,
+      "pct_strict": 0.0
+    },
+    {
+      "author": "Brazen-Hanson",
+      "year": 2017.0,
+      "total": 25,
+      "strict_in_xie": 0,
+      "loose_in_xie": 0,
+      "pct_strict": 0.0
+    },
+    {
+      "author": "XIao",
+      "year": 2019.0,
+      "total": 15,
+      "strict_in_xie": 0,
+      "loose_in_xie": 0,
+      "pct_strict": 0.0
+    },
+    {
+      "author": "Jinxia Liu",
+      "year": 2007.0,
+      "total": 7,
+      "strict_in_xie": 0,
+      "loose_in_xie": 0,
+      "pct_strict": 0.0
+    },
+    {
+      "author": "Jinxia Liu",
+      "year": 2005.0,
+      "total": 5,
+      "strict_in_xie": 0,
+      "loose_in_xie": 0,
+      "pct_strict": 0.0
+    },
+    {
+      "author": "Richey",
+      "year": 1997.0,
+      "total": 20,
+      "strict_in_xie": 0,
+      "loose_in_xie": 0,
+      "pct_strict": 0.0
+    },
+    {
+      "author": "Guelfo",
+      "year": 2013.0,
+      "total": 30,
+      "strict_in_xie": 0,
+      "loose_in_xie": 7,
+      "pct_strict": 0.0
+    }
+  ]
+}
