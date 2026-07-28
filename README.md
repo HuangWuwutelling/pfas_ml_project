@@ -15,19 +15,15 @@ Reproducible code for:
 
 ## What this repository contains
 
-- **21 production Python scripts** implementing the full analysis pipeline (Sections 2–3 of the manuscript)
+- **21 production Python scripts** implementing the full analysis pipeline (Sections 2–3 of the manuscript); plus **4 dedicated cross-study benchmark / audit scripts** (added 2026-07-27) and **18 pytest unit tests** in `tests/`
 - **All input data** for the 47-PFAS benchmark dataset (1,227 K<sub>d</sub> measurements × 451 soils)
 - **EPA PFASMASTER inventory** (~10,972 compounds with valid SMILES) for chemical space expansion
-- **Paper SI** (`es4c13284_si_002.xlsx`) — the single source xlsx from which all K<sub>d</sub> regression inputs are derived
-- **External validation data** — Xie et al. (2024) Table 5 (1,780 overlapping measurements) and Morales et al. (2026) SI (84 field soils, long-format extracted to `data/source/morales_long.csv`)
+- **Paper SI** (`es4c13284_si_002.xlsx`, CC BY 4.0) — the single source xlsx from which all K<sub>d</sub> regression inputs are derived
+- **Xie 2024 SI** — **NOT** bundled (Elsevier, all rights reserved); users download from [DOI 10.1016/j.scitotenv.2024.176575](https://doi.org/10.1016/j.scitotenv.2024.176575); auto-extracted to `/tmp/xie2024_table5.csv` on first run
 - **13 publication figures** (6 main + 6 SI + 1 graphical abstract) — already generated under `data/paper/`
 - **13 publication tables** — already generated under `data/paper/`
 
-**Reproduction status (verified 2026-07-23):** All four commits in this repo were
-pushed after an end-to-end run that reproduced paper headline numbers within ±0.015
-of the original publication. See [docs/REPRODUCE.md §12–16](docs/REPRODUCE.md) for the
-full audit trail, including 3 known bugs, 5 path-portability fixes, 1 train/test
-leakage fix (sklearn.Pipeline in `paper_03`), and LOO pooled R² canonicalization.
+**Reproduction status:** All committed code reproduces paper headline numbers within ±0.015 of the published values. See [docs/REPRODUCE.md §12–16](docs/REPRODUCE.md) for the full audit trail, including 3 known bugs, 5 path-portability fixes, 1 train/test leakage fix (sklearn.Pipeline in `paper_03`), LOO pooled R² canonicalization, and the 2026-07-27 Xie ↔ training-set overlap audit (162 strict-overlap rows identified and removed; R² moved from 0.783 to 0.778 — within 0.01).
 
 ---
 
@@ -39,11 +35,15 @@ leakage fix (sklearn.Pipeline in `paper_03`), and LOO pooled R² canonicalizatio
 | Soil properties only (9 features) | 0.245 | 1.15 | — |
 | **Combined (RDKit + soil, ~146 features)** | **0.870** | **2.78** | **0.730** |
 | Simplified (MolWt + Corg + pH + CEC, 4 features) | 0.837 | 2.48 | 0.592 (nested) |
-| **External validation — Xie 2024** (1,780 rows × 22 PFAS) | **+0.78** | — | — |
-| External validation — Morales 2026 (57 rows × 9 PFAS) | −3.74 | — | — |
+| **Cross-study benchmark — Xie 2024** (full 1,780 rows × 22 PFAS) | **+0.783** | — | — |
+| **Cross-study benchmark — Xie 2024** (1,618-row strict-overlap-removed subset) | **+0.778** | — | — |
 
 A simplified 4-feature model recovers 96% of the full-model accuracy, demonstrating
-extensive redundancy in RDKit descriptors for the PFAS chemical space.
+extensive redundancy in RDKit descriptors for the PFAS chemical space. The Xie 2024
+cross-study benchmark is the only external benchmark reported; see §3.8 of the
+manuscript for the source-aware re-evaluation that identified and removed 162
+strict-overlap rows (PFOS + PFUnDA columns in the prior extraction were mis-assigned
+— see the audit trail in `docs/REPRODUCE.md`).
 
 ---
 
@@ -82,10 +82,21 @@ python scripts/paper_07_generate_figures.py       # 6 main + 4 SI figures
 python scripts/gen_si_figs_s1s2.py                # 2 more SI figures
 python scripts/gen_graphical_abstract.py          # graphical abstract
 
-# 7. Independent verification (~1 minute) — see §10 of REPRODUCE.md for headline numbers
+# 7. Cross-study benchmark on Xie 2024 (§3.8) — requires Xie SI to be present
+#    (Elsevier, not redistributable; see "License" section for download).
+python scripts/check_xie_train_overlap.py         # audit training-set vs Xie overlap
+python scripts/build_xie_overlap_table.py         # build supplementary table S5
+python scripts/reevaluate_xie_disjoint.py         # disjoint-subset R² = 0.778
+python scripts/augment_simplified_models.py       # 3-feature ablation row
+python scripts/paper_10_external_validation.py    # full cross-study benchmark (1×3 fig)
+
+# 8. Independent verification (~1 minute) — see §10 of REPRODUCE.md for headline numbers
 python scripts/verify_cv.py
 python scripts/verify_cv_final.py
 python scripts/verify_check_loo_stats.py
+
+# 9. Run the test suite
+python -m pytest tests/ -q
 ```
 
 **Expected runtime**: ~15–30 minutes on a 4-core CPU (no GPU required for any script).
@@ -120,22 +131,21 @@ For detailed step-by-step instructions, see [docs/REPRODUCE.md](docs/REPRODUCE.m
   not the current 22,987+ entries. This is sufficient for the paper's 11K chemical-space
   analysis. Re-fetching from EPA CompTox will yield the current list.
 
-### Source 3: Xie et al. (2024) — External validation (lab)
-- **Used for**: External validation of the paper model (Section 3.8, 22 PFAS overlap with paper)
+### Source 3: Xie et al. (2024) — Cross-study benchmark (literature compilation)
+- **Used for**: Cross-study benchmark of the paper model (Section 3.8, 22 PFAS overlap with paper)
 - **DOI**: https://doi.org/10.1016/j.scitotenv.2024.176575
 - **License**: Elsevier (All rights reserved — paper SI is downloaded by the user
   from the DOI and is NOT redistributed in this repo; see `docs/REPRODUCE.md` §17)
 - **Used in script**: `scripts/paper_10_external_validation.py` (auto-extracts Table S5)
-- **Result**: pooled R² = 0.78 on 1,780 Kd measurements (22 overlapping PFAS)
+- **Result**: pooled R² = 0.783 on 1,780 Kd measurements (22 overlapping PFAS);
+  R² = 0.778 on the 1,618-row strict-overlap-removed subset (PFAS + pH ± 0.05
+  + OC ± 0.05 + log10 Kd ± 0.005). The two compilations share 12 primary
+  studies; the 162-row overlap is documented in `data/paper/tableS5_xie_source_overlap.csv`.
 
-### Source 4: Morales et al. (2026) — External validation (field)
-- **File**: `data/source/Morales_2026_SI.xlsx` (4 sheets, 84 field-contaminated soils)
+### Source 4 (archival, not used in the paper): Morales et al. (2026) field-contaminated soils
+- **File**: `data/source/Morales_2026_SI.xlsx` (4 sheets, 84 field-contaminated soils, CC BY 4.0)
 - **Source**: [Environmental Research 306(1), 125071](https://doi.org/10.1016/j.envres.2026.125071)
-- **License**: CC BY 4.0 (redistributable with attribution)
-- **Used for**: External validation of the paper model on field-contaminated soils
-  (Section 3.8, 9 PFAS overlap with paper, 57 rows with full features)
-- **Derived file**: `data/source/morales_long.csv` (long-format extraction)
-- **Result**: R² = −3.74 (negative, expected domain-shift from lab to field conditions)
+- **Audit artefact only**: the long-format extraction is `data/source/morales_long_reextracted.csv` (re-validated by `scripts/extract_morales_2026.py`; the original `data/source/morales_long.csv` was found to have a PFOS/PFUnDA column mis-assignment, which the re-extracted file fixes). These files are kept in the repository as a reproducible audit trail of the re-extraction work performed 2026-07-26→2026-07-27, but **Morales is not reported in the paper** as a formal benchmark (the field-soil measurement protocol differs structurally from the laboratory batch-equilibrium data used for training, and Morales did not report CEC). The data and extraction script are not called by any active paper pipeline (`paper_10_external_validation.py` no longer imports them).
 
 ---
 
@@ -240,12 +250,33 @@ gen_si_figs_s1s2.py               ──►  data/paper/figS1–2_*.png
 gen_graphical_abstract.py         ──►  data/paper/graphical_abstract.png
 ```
 
-### Part F: Independent verification
+### Part F: Cross-study benchmark + source-overlap audit (Section 3.8)
+
+```
+check_xie_train_overlap.py        ──►  data/paper/kd_xie_train_overlap_report.json
+build_xie_overlap_table.py        ──►  data/paper/tableS5_xie_source_overlap.csv
+reevaluate_xie_disjoint.py        ──►  data/paper/kd_xie_disjoint_validation.json
+augment_simplified_models.py      ──►  data/paper/kd_simplified_results.csv (appends 3-feature row)
+
+paper_10_external_validation.py   ──►  data/paper/kd_external_validation_xie2024.csv (1,780 rows)
+                                  ──►  data/paper/kd_external_validation_xie2024_disjoint.csv (1,618 rows)
+                                  ──►  data/paper/fig10_external_validation.png (1×3 panel)
+```
+
+### Part G: Independent verification
 
 ```
 verify_cv.py                      ──►  cross-checks 5-fold CV R² ≈ 0.556, simplified R² ≈ 0.83
 verify_cv_final.py                ──►  multi-seed CV averaged R²
 verify_check_loo_stats.py         ──►  LOO per-compound R² distribution
+```
+
+### Tests
+
+```
+pytest tests/                     ──►  18 unit tests covering simplified-model
+                                       augmentation, Xie overlap audit, and disjoint
+                                       validation (all pass on a fresh clone)
 ```
 
 ---
@@ -257,6 +288,7 @@ verify_check_loo_stats.py         ──►  LOO per-compound R² distribution
 - **RAM**: 4 GB minimum, 8 GB recommended (for 11K PFAS descriptor matrix)
 - **Disk**: ~500 MB for data + code + intermediate outputs
 - **CPU**: 4 cores recommended. **No GPU required** (all models train on CPU).
+- **Test deps**: `pytest >= 7.0` (already in `requirements.txt`)
 
 ---
 
@@ -266,11 +298,14 @@ If you use this code, please cite the accompanying paper (citation will be added
 
 For the underlying data, please also cite:
 - Fabregat-Palau et al. (2025), *Environmental Science & Technology*, 59(15), 7678–7687. https://doi.org/10.1021/acs.est.4c13284
+- Xie et al. (2024), *Science of The Total Environment*, 954, 176575. https://doi.org/10.1016/j.scitotenv.2024.176575
 
 ---
 
 ## License
 
 This code is released under the MIT License (see [LICENSE](LICENSE)). The input data are subject to their original licenses:
-- Fabregat-Palau 2025 SI: CC-BY 4.0
+- Fabregat-Palau 2025 SI: CC-BY 4.0 (redistributable; bundled at `data/source/es4c13284_si_002.xlsx`)
+- Morales 2026 SI: CC-BY 4.0 (redistributable; bundled at `data/source/Morales_2026_SI.xlsx`)
+- Xie 2024 SI: © Elsevier B.V., **all rights reserved**; **NOT** redistributable. Users must download the SI themselves from the publisher's website (DOI above) and place it at `data/source/Elucidating per- and polyfluoroalkyl2024-SI.docx` before running `paper_10_external_validation.py`. The auto-extraction path is `/tmp/xie2024_table5.csv`.
 - EPA PFASMASTER: Public domain (US Government work)

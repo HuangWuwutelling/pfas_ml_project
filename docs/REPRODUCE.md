@@ -277,8 +277,7 @@ upon publication acceptance. The underlying data sources should also be cited:
 
 - **Training data (in-sample)**: Fabregat-Palau et al. (2025), *Environ. Sci. Technol.* 59(15), 7678–7687. https://doi.org/10.1021/acs.est.4c13284
 - **Chemical inventory**: EPA CompTox PFASMASTER, https://comptox.epa.gov/dashboard/chemical-lists/PFASMASTER
-- **External validation (lab)**: Xie et al. (2024), *Sci. Total Environ.* 954, 176575. https://doi.org/10.1016/j.scitotenv.2024.176575
-- **External validation (field)**: Morales et al. (2026), *Environ. Res.* 306(1), 125071. https://doi.org/10.1016/j.envres.2026.125071
+- **Cross-study benchmark**: Xie et al. (2024), *Sci. Total Environ.* 954, 176575. https://doi.org/10.1016/j.scitotenv.2024.176575
 
 ---
 
@@ -470,39 +469,52 @@ from `paper_03`.
 
 ---
 
-## 17. External validation against Xie 2024 and Morales 2026 (verified 2026-07-24)
+## 17. Cross-study benchmark against Xie 2024 (verified 2026-07-24, re-audited 2026-07-27)
 
-`paper_10_external_validation.py` runs the paper-trained XGBoost models against two independent K<sub>d</sub> datasets:
+`paper_10_external_validation.py` runs the paper-trained XGBoost models against the Xie et al. (2024) compilation:
 
-- **Xie et al. (2024)** [25] (Sci. Total Environ. 954, 176575): 22 PFAS overlap with paper, 1,780 rows
-- **Morales et al. (2026)** [26] (Environ. Res. 306, 125071): 9 PFAS overlap, 57 rows with full features
+- **Xie et al. (2024)** [25] (Sci. Total Environ. 954, 176575): 22 PFAS overlap with paper, 1,780 rows. The two compilations share 12 primary studies (Cai 2022, Campos-Pereira 2023, Fabregat-Palau 2021, Higgins and Luthy 2006, Knight 2019/2021, Mejia-Avendaño 2020, Milinovic 2015, Nguyen 2020, Oliver 2020, Umeh 2021, Wang 2022); 162 of the 1,780 rows are strict-overlap duplicates of training rows and are removed for the disjoint-subset evaluation.
 
 Run with:
 
 ```bash
+# (Optional) Re-run the Xie ↔ training-set overlap audit
+python3 scripts/check_xie_train_overlap.py
+# (Optional) Build supplementary table S5
+python3 scripts/build_xie_overlap_table.py
+# (Optional) Re-run the disjoint-subset cross-study benchmark
+python3 scripts/reevaluate_xie_disjoint.py
+# (Optional) Append a 3-feature ablation row to the simplified results table
+python3 scripts/augment_simplified_models.py
+# Main cross-study benchmark (writes fig10_external_validation.png and CSV)
 python3 scripts/paper_10_external_validation.py
 ```
 
 Outputs:
-- `data/paper/kd_external_validation_xie2024.csv` (1,780 rows)
-- `data/paper/kd_external_validation_morales2026.csv` (57 rows)
-- `data/paper/fig10_external_validation.png` (4-panel comparison)
+- `data/paper/kd_external_validation_xie2024.csv` (1,780 rows; full set)
+- `data/paper/kd_external_validation_xie2024_disjoint.csv` (1,618 rows; strict-overlap-removed subset)
+- `data/paper/fig10_external_validation.png` (1×3 panel: Xie full, Xie full simplified, Xie disjoint simplified)
+- `data/paper/kd_xie_train_overlap_report.json` (per-source overlap audit)
+- `data/paper/kd_xie_disjoint_validation.json` (disjoint-subset R² summary)
+- `data/paper/tableS5_xie_source_overlap.csv` (supplementary table S5)
 
 Headline results:
 
-| Dataset | Model | R² | RMSE |
-|---|---|---:|---:|
-| Paper training (in-sample) | Simplified 4-feat | 0.94 | — |
-| Xie 2024 | Simplified 4-feat | **+0.78** | 0.38 |
-| Xie 2024 | Full 145-feat | +0.57 | 0.54 |
-| Morales 2026 | 3-feat (no CEC) | −3.74 | 1.51 |
+| Dataset | Model | n | R² | RMSE |
+|---|---|---:|---:|---:|
+| Paper training (in-sample) | Simplified 4-feat | 1,227 | 0.94 | — |
+| Xie 2024 — full set | Simplified 4-feat | 1,780 | **+0.783** | 0.384 |
+| Xie 2024 — disjoint subset | Simplified 4-feat | 1,618 | **+0.778** | 0.397 |
+| Xie 2024 — full set | Full 145-feat | 1,780 | +0.566 | 0.544 |
+| Xie 2024 — full set | Xie-aligned 6-feat | 1,780 | +0.109 | 0.779 |
 
-The Xie 2024 R² of 0.78 confirms the paper model generalizes to a wholly independent experimental compilation (within 0.09 of the in-sample R²). The Morales 2026 failure reflects a domain shift between laboratory training data (low-Kd clean soils) and field-contaminated soils (high-Kd legacy sites); see Section 4.6 of the discussion draft for full interpretation.
+The Xie 2024 R² of 0.783 (full set) and 0.778 (disjoint subset) confirm the paper model generalises to an independent literature compilation to within 0.01 — the 162-row strict-overlap with the training set (PFAS + pH ± 0.05 + OC ± 0.05 + log<sub>10</sub> K<sub>d</sub> ± 0.005) does not drive the result.
 
 **Data sources downloaded to `data/source/`:**
-- `Elucidating per- and polyfluoroalkyl2024.pdf` — Xie 2024 paper
-- `Elucidating per- and polyfluoroalkyl2024-SI.docx` — Xie 2024 SI (Table 5 extracted to `/tmp/xie2024_table5.csv` during script run)
-- `Morales_2026_SI.xlsx` — Morales 2026 SI (4 sheets, Kd matrix auto-converted to long format in `data/source/morales_long.csv` during script run)
+- `Elucidating per- and polyfluoroalkyl2024.pdf` — Xie 2024 paper (Elsevier, NOT redistributable; users download themselves)
+- `Elucidating per- and polyfluoroalkyl2024-SI.docx` — Xie 2024 SI (Elsevier, NOT redistributable; Table 5 extracted to `/tmp/xie2024_table5.csv` during script run)
+
+**Note on Morales et al. (2026).** The field-contaminated-soil data of Morales et al. (Environ. Res. 306, 125071) was considered as a field-domain reference but is **not** included in the formal cross-study benchmark. The decision was made because (i) Morales did not report CEC, which is one of the four features in the simplified model, and (ii) the field-soil measurement protocol differs structurally from the laboratory batch-equilibrium data used for training. The Morales SI (`data/source/Morales_2026_SI.xlsx`, CC BY 4.0) and the re-extracted long-format CSV (`data/source/morales_long_reextracted.csv`, produced by `scripts/extract_morales_2026.py`) are retained in the repository as a reproducible audit trail of the re-extraction work, but no script in the active paper pipeline imports them.
 
 ## 18. License
 
