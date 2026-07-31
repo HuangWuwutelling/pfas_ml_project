@@ -1,2 +1,2 @@
 model,n_pfas,n_total_samples,overall_r2,overall_rmse,overall_mae,avg_r2,median_r2,std_r2,positive_r2_ratio
-RDKit + soil properties,47,1227,0.7304,0.4768,0.367,nan,nan,nan,27/47
+RDKit + soil properties,47,1227,0.7304,0.4768,0.367,-0.5623,0.1092,1.7975,27/47

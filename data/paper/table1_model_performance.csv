@@ -1,0 +1,9 @@
+Model,n_features,R²_test,RMSE,RPD,CV_R²,LOO_R²
+Top 5 SHAP (molecular descriptors),2,0.6465,0.5493,1.68,0.2055,
+Top 10 SHAP (molecular descriptors),5,0.6459,0.5498,1.68,0.2923,
+Top 20 SHAP (molecular descriptors),11,0.646,0.5497,1.68,0.3066,
+Low-correlation Top 30 (>0.95 removed),11,0.6471,0.5489,1.68,0.287,
+RDKit descriptors only (225),225,0.6475,0.5486,1.68,0.2375,
+All features (RDKit + soil),234,0.8697,0.3335,2.77,0.539,0.7304
+Corg + pH + CEC only,3,0.1976,0.8277,1.12,-0.18,
+MolWt+Corg+pH+CEC,4,0.8407,0.3723,2.51,0.4917,

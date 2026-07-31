@@ -1,0 +1,9 @@
+subfamily,n_compounds,pearson_r,p_value,slope_logKd_per_100MW
+Cationic,3,0.954,1.95e-01,1.831
+FOSA,4,0.933,6.72e-02,1.485
+FTOH,4,0.998,2.50e-03,1.057
+FTS,3,1.0,7.66e-03,0.909
+PFCA,12,0.925,1.65e-05,0.672
+PFPA,3,0.951,2.01e-01,0.611
+PFSA,8,0.929,8.60e-04,0.733
+Zwitterionic,5,0.834,7.91e-02,0.745
