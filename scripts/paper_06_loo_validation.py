@@ -207,9 +207,14 @@ def run_loo(rows, fieldnames, pfas_groups, feature_subset, model_label):
     overall_rmse = np.sqrt(mean_squared_error(all_y_true, all_y_pred))
     overall_mae = mean_absolute_error(all_y_true, all_y_pred)
     
-    avg_r2 = np.mean([r["r2"] for r in results])
-    median_r2 = np.median([r["r2"] for r in results])
-    std_r2 = np.std([r["r2"] for r in results])
+    # nan-safe aggregates: a single-sample test fold (n_test == 1, e.g. 4:2
+    # FTOH) yields R^2 = nan because the denominator is zero. Falling
+    # back to nanmean/nanmedian/nanstd keeps those rows in the count but
+    # out of the aggregate; alternatively they could be filtered upstream.
+    r2_array = np.array([r["r2"] for r in results], dtype=float)
+    avg_r2 = float(np.nanmean(r2_array))
+    median_r2 = float(np.nanmedian(r2_array))
+    std_r2 = float(np.nanstd(r2_array))
     n_positive = sum(1 for r in results if r["r2"] > 0)
     n_total = len(results)
     

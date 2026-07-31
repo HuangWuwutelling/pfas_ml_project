@@ -142,21 +142,29 @@ if __name__ == "__main__":
     print(f"\n✅ save: {OUT_COMBINED}")
 
     # Combined LOO summary
-    combined_r2 = np.array([r["r2"] for r in all_results])
+    combined_r2 = np.array([r["r2"] for r in all_results], dtype=float)
     combined_n_test = np.array([r["n_test"] for r in all_results])
     overall_r2 = r2_score(combined_y_true, combined_y_pred)
 
+    # nan-safe aggregates: n_test == 1 folds (e.g. 4:2 FTOH) yield R^2=nan
+    # because the denominator is zero. nanmean/nanmedian keep those rows in
+    # the count but out of the aggregate; they could alternatively be
+    # filtered upstream with n_test >= 2.
+    avg_r2 = float(np.nanmean(combined_r2))
+    median_r2 = float(np.nanmedian(combined_r2))
+    std_r2 = float(np.nanstd(combined_r2))
+
     print(f"\n=== Combined LOO summary ===")
     print(f"  Overall R² (pooled) = {overall_r2:.4f}")
-    print(f"  R² = {np.mean(combined_r2):.4f}")
-    print(f"  median R² = {np.median(combined_r2):.4f}")
+    print(f"  R² = {avg_r2:.4f}")
+    print(f"  median R² = {median_r2:.4f}")
     print(f"  R²: {sum(combined_r2 > 0)}/{len(combined_r2)}")
 
     # n≥10 vs n<10
     large = combined_r2[combined_n_test >= 10]
     small = combined_r2[combined_n_test < 10]
-    print(f"  n≥10 mean R² = {np.mean(large):.4f} (n={len(large)})")
-    print(f"  n<10 mean R² = {np.mean(small):.4f} (n={len(small)})")
+    print(f"  n≥10 mean R² = {np.nanmean(large):.4f} (n={len(large)})")
+    print(f"  n<10 mean R² = {np.nanmean(small):.4f} (n={len(small)})")
 
     # R² > 0.5 / 0~0.5 / <0
     good = sum(combined_r2 > 0.5)
@@ -189,9 +197,9 @@ if __name__ == "__main__":
             "overall_r2": round(overall_r2, 4),
             "overall_rmse": round(np.sqrt(mean_squared_error(combined_y_true, combined_y_pred)), 4),
             "overall_mae": round(np.mean(np.abs(np.array(combined_y_true) - np.array(combined_y_pred))), 4),
-            "avg_r2": round(np.mean(combined_r2), 4),
-            "median_r2": round(np.median(combined_r2), 4),
-            "std_r2": round(np.std(combined_r2), 4),
+            "avg_r2": round(avg_r2, 4),
+            "median_r2": round(median_r2, 4),
+            "std_r2": round(std_r2, 4),
             "positive_r2_ratio": f"{n_positive}/{n_total}",
         })
     print(f"  ✅ LOOsummary saved: {OUT_SUMMARY}")

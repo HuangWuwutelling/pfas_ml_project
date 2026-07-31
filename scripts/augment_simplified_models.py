@@ -61,7 +61,16 @@ def run(
     feature_matrix: Path = FEATURE_MATRIX,
     output_results: Path = DEFAULT_OUTPUT,
     predictions_output: Path | None = None,
+    overwrite: bool = False,
 ) -> dict[str, object]:
+    """Train the three-feature model and append the row to ``output_results``.
+
+    By default the new row is **appended** to an existing results CSV (or
+    a new file with header is created if none exists). This avoids
+    silently wiping the rows produced by ``paper_05`` and ``paper_06b``.
+    Pass ``overwrite=True`` to fall back to the legacy behaviour (replace
+    the whole file with the single new row).
+    """
     X, y = _load_xy(feature_matrix, THREE_FEAT_FEATURES)
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -95,11 +104,20 @@ def run(
         "cv_std": round(float(cv_scores.std()), 4),
     }
 
-    output_results.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = ["model", "n_features", "r2", "rmse", "rpd", "cv_r2", "cv_std"]
-    with open(output_results, "w", newline="", encoding="utf-8") as f:
+    output_results.parent.mkdir(parents=True, exist_ok=True)
+
+    if overwrite or not output_results.exists():
+        mode = "w"
+        write_header = True
+    else:
+        mode = "a"
+        write_header = False
+
+    with open(output_results, mode, newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
+        if write_header:
+            writer.writeheader()
         writer.writerow(new_row)
 
     if predictions_output is not None:
@@ -120,6 +138,8 @@ def run(
         "cv_r2": float(cv_scores.mean()),
         "cv_std": float(cv_scores.std()),
         "row": new_row,
+        "write_mode": mode,
+        "appended_existing": not write_header,
     }
 
 
@@ -135,13 +155,22 @@ def main() -> None:
         "--output",
         type=Path,
         default=DEFAULT_OUTPUT,
-        help="Where to write the augmented kd_simplified_results.csv",
+        help="Where to write the augmented kd_simplified_results.csv (default: append to %(default)s)",
     )
     parser.add_argument(
         "--predictions",
         type=Path,
         default=PREDICTIONS_OUTPUT,
         help="Where to write test-set predictions for plotting (use 'none' to skip)",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=(
+            "Replace the entire results CSV with only the new row (legacy "
+            "behaviour). Default is to append to the existing file so that "
+            "rows from paper_05 / paper_06b are preserved."
+        ),
     )
     args = parser.parse_args()
 
@@ -150,8 +179,10 @@ def main() -> None:
         feature_matrix=args.feature_matrix,
         output_results=args.output,
         predictions_output=predictions,
+        overwrite=args.overwrite,
     )
-    print(f"Appended {result['model']} to {args.output}")
+    verb = "Overwrote" if result["write_mode"] == "w" else "Appended"
+    print(f"{verb} {result['model']} to {args.output} (mode={result['write_mode']})")
     print(
         f"  R²={result['r2']:.4f}  RMSE={result['rmse']:.4f}  "
         f"RPD={result['rpd']:.2f}  5-fold CV R²={result['cv_r2']:.4f}"
